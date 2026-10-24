@@ -1,1 +1,3 @@
 - [Campus Core scope](campus-core-scope.md) — real student ecosystem, no fabricated activity, university-agnostic, and explicit launch gates.
+- [Owner governance](owner-governance.md) — ownership private to staff; only owner appoints/demotes admins, while admins can request changes.
+- [Workspace validation](workspace-validation.md) — verify changed CHECK expressions; force library type rebuilds after dependency major upgrades.

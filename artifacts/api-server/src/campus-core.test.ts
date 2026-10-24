@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { pool } from "@workspace/db";
 import { normalizeUsername, usernameError, safeLink, academicEntry } from "./lib/validation";
+import { sanitizeImage } from "./lib/image-safety";
+import { validateStaffTarget, applyStaffRole, staffTransaction } from "./lib/staff-access";
+import { db, profilesTable as profiles, accessRequestsTable, auditTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import sharp from "sharp";
 
 const base = "http://localhost:80/api";
 after(async () => { await pool.end(); });
@@ -78,6 +83,9 @@ for (const [method, path] of [
   ["PUT", "/listings/1"], ["DELETE", "/listings/1"], ["POST", "/listings/1/save"],
   ["POST", "/reports"], ["POST", "/storage/uploads/request-url"], ["POST", "/storage/uploads/complete"],
   ["GET", "/admin/overview"], ["POST", "/admin/actions"], ["POST", "/admin/directory"],
+  ["GET", "/admin/access"], ["POST", "/admin/access/roles"], ["POST", "/admin/access/requests"],
+  ["POST", "/admin/access/requests/1/decision"],
+  ["POST", "/admin/directory/import-nigeria"],
 ]) {
   test(`Anonymous ${method} ${path} is rejected`, async () => {
     const response = await fetch(`${base}${path}`, { method, ...(method === "GET" ? {} : { headers: { "Content-Type": "application/json" }, body: "{}" }) });
@@ -112,7 +120,69 @@ test("Database unique constraint protects usernames; fixtures always roll back",
   }
 });
 test("Row-level security is enabled for all application tables", async () => {
-  const { rows } = await pool.query("select relname,relrowsecurity from pg_class where relname = any($1::text[])", [["academic_directory", "institution_requests", "profiles", "listings", "saved_listings", "reports", "audit_log", "uploads"]]);
-  assert.equal(rows.length, 8);
+  const { rows } = await pool.query("select relname,relrowsecurity from pg_class where relname = any($1::text[])", [["academic_directory", "institution_requests", "profiles", "listings", "saved_listings", "reports", "audit_log", "uploads", "access_requests"]]);
+  assert.equal(rows.length, 9);
   assert.ok(rows.every(row => row.relrowsecurity), "Only the server database owner bypasses RLS; there are no public policies");
+});
+test("Corrupt images cannot pass by supplying only a valid header", async () => {
+  await assert.rejects(sanitizeImage(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])));
+  await assert.rejects(sanitizeImage(Buffer.alloc(5 * 1024 * 1024 + 1)));
+});
+test("Valid image is decoded, resized, metadata-stripped and safely re-encoded", async () => {
+  const png = await sharp({ create: { width: 1800, height: 900, channels: 3, background: "purple" } }).png().toBuffer();
+  const output = await sanitizeImage(png);
+  const meta = await sharp(output).metadata();
+  assert.equal(meta.format, "webp");
+  assert.equal(meta.width, 1600);
+  assert.equal(meta.height, 800);
+  assert.equal(meta.exif, undefined);
+});
+test("The verified owner is bound privately and protected by a unique database constraint", async () => {
+  const { rows } = await pool.query("select id,username,role from profiles where role='owner'");
+  assert.equal(rows.length, 1);
+  const owner = rows[0];
+  if (owner.username) {
+    const response = await fetch(`${base}/profiles/${owner.username}`);
+    assert.equal(response.status, 200);
+    const profile = await response.json() as Record<string, unknown>;
+    for (const field of ["role", "email", "emailAddress", "id", "suspended"]) assert.equal(field in profile, false, field);
+    assert.equal(JSON.stringify(profile).includes(process.env.PLATFORM_OWNER_EMAIL ?? "__missing__"), false);
+  }
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await assert.rejects(client.query("insert into profiles(id,role) values ($1,'owner')", [`fixture_${randomUUID()}`]), (err: unknown) => (err as {code: string}).code === "23505");
+  } finally { await client.query("ROLLBACK"); client.release(); }
+});
+test("Unknown actors cannot run owner-only role operations", async () => {
+  await assert.rejects(staffTransaction(`missing_${randomUUID()}`, true, async () => {}), (e: unknown) => (e as {status:number}).status === 403);
+});
+test("Owner target cannot be changed; role changes audit and cancel pending requests atomically", async () => {
+  const rollback = new Error("rollback-fixtures");
+  try {
+    await db.transaction(async tx => {
+      const suffix = randomUUID().replaceAll("-", "").slice(0, 10);
+      const requesterId = `fixture_admin_${suffix}`;
+      const targetId = `fixture_student_${suffix}`;
+      await tx.insert(profiles).values([{ id: requesterId, role: "admin" }, { id: targetId, role: "student" }]);
+      const [owner] = await tx.select().from(profiles).where(eq(profiles.role, "owner"));
+      assert.ok(owner);
+      await tx.execute("SAVEPOINT owner_target_check");
+      await assert.rejects(validateStaffTarget(tx, owner.id, "student"), (e:unknown)=>(e as {status:number}).status === 403);
+      await tx.execute("ROLLBACK TO SAVEPOINT owner_target_check");
+      const [request] = await tx.insert(accessRequestsTable).values({ requesterId, targetId, action:"promote", reason:"Test approval request, never committed." }).returning();
+      await applyStaffRole(tx, owner.id, targetId, "admin", "Test direct role change, never committed.");
+      const [target] = await tx.select().from(profiles).where(eq(profiles.id, targetId));
+      assert.equal(target.role, "admin");
+      const [cancelled] = await tx.select().from(accessRequestsTable).where(eq(accessRequestsTable.id, request.id));
+      assert.equal(cancelled.status, "cancelled");
+      const logs = await tx.select().from(auditTable).where(eq(auditTable.targetId, targetId));
+      assert.equal(logs.length, 1);
+      assert.equal(logs[0].action, "promote-admin");
+      await applyStaffRole(tx, owner.id, targetId, "student", "Test removal, never committed.");
+      const [demoted] = await tx.select().from(profiles).where(eq(profiles.id, targetId));
+      assert.equal(demoted.role, "student");
+      throw rollback;
+    });
+  } catch (error) { if (error !== rollback) throw error; }
 });

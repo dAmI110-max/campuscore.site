@@ -1,17 +1,23 @@
 import { Router, type IRouter } from "express";
 import { db, directoryTable as d, institutionRequestsTable as r, reportsTable, profilesTable as p, listingsTable as l, auditTable } from "@workspace/db";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { GetAdminOverviewResponse, ManageDirectoryBody, ManageDirectoryResponse, ModerateBody, ModerateResponse } from "@workspace/api-zod";
 import { administrator } from "../lib/auth";
 import { HttpError } from "../lib/errors";
 import { safeLink, academicEntry } from "../lib/validation";
+import { importOfficialUniversities } from "../lib/official-directory";
 
 const router: IRouter = Router();
+router.post("/admin/directory/import-nigeria", async (req, res): Promise<void> => {
+  const actor = await administrator(req);
+  if (actor.role !== "owner") throw new HttpError(403, "Only the owner can import official reference data.");
+  res.json(await importOfficialUniversities(actor.id));
+});
 router.get("/admin/overview", async (req, res): Promise<void> => {
   await administrator(req);
   const [reports, requests, users, audit, directory] = await Promise.all([
-    db.select().from(reportsTable).orderBy(desc(reportsTable.createdAt)).limit(100),
-    db.select().from(r).orderBy(desc(r.createdAt)).limit(100),
+    db.select().from(reportsTable).orderBy(sql`case when ${reportsTable.status} = 'pending' then 0 else 1 end`, desc(reportsTable.createdAt)).limit(100),
+    db.select().from(r).orderBy(sql`case when ${r.status} = 'pending' then 0 else 1 end`, desc(r.createdAt)).limit(100),
     db.select().from(p).orderBy(desc(p.createdAt)).limit(100),
     db.select().from(auditTable).orderBy(desc(auditTable.createdAt)).limit(100),
     db.select().from(d).orderBy(d.name).limit(2000),
@@ -56,7 +62,7 @@ router.post("/admin/actions", async (req, res): Promise<void> => {
     if (body.action === "suspend-user" || body.action === "restore-user") {
       if (body.targetId === admin.id) throw new HttpError(400, "You cannot suspend your own account.");
       const [target] = await tx.select().from(p).where(eq(p.id, body.targetId)).for("update");
-      if (target?.role === "admin") throw new HttpError(403, "Administrator accounts require operator review.");
+      if (target?.role === "admin" || target?.role === "owner") throw new HttpError(403, "Staff accounts cannot be suspended. Only the owner can change administrator access.");
       changed = await tx.update(p).set({ suspended: body.action === "suspend-user", updatedAt: new Date() }).where(eq(p.id, body.targetId)).returning();
     } else {
       if (!/^[1-9]\d*$/.test(body.targetId)) throw new HttpError(400, "Invalid target identifier.");

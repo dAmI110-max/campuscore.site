@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, check } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, check, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { directoryTable } from "./directory";
@@ -20,7 +20,8 @@ export const profilesTable = pgTable("profiles", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   check("username_normalized", sql`${t.username} is null or (${t.username} = lower(${t.username}) and ${t.username} ~ '^[a-z][a-z0-9_]{2,23}$')`),
-  check("profile_role", sql`${t.role} in ('student','admin')`),
+  check("profile_role", sql`${t.role} in ('student','admin','owner')`),
+  uniqueIndex("one_platform_owner").on(t.role).where(sql`${t.role} = 'owner'`),
 ]).enableRLS();
 export const insertProfileSchema = createInsertSchema(profilesTable).omit({ createdAt: true, updatedAt: true });
 export type Profile = typeof profilesTable.$inferSelect;

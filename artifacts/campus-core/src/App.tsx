@@ -21,6 +21,7 @@ import ProfilePage from "@/pages/profile";
 import People from "@/pages/people";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
+import AdminAccess from "@/pages/admin-access";
 import { SignInPage, SignUpPage } from "@/pages/auth";
 import { KINDS } from "@/lib/kinds";
 
@@ -144,6 +145,7 @@ function Router() {
           <Route path="/people/:username" component={People} />
           <Route path="/settings" component={auth(<Settings />)} />
           <Route path="/admin" component={auth(<Admin />)} />
+          <Route path="/admin/access" component={auth(<AdminAccess />)} />
           <Route component={NotFound} />
         </Switch>
       </ErrorBoundary>

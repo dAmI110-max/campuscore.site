@@ -83,7 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <DropdownMenuItem asChild><Link href="/my-listings"><FileText className="mr-2 h-4 w-4" />My listings</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/saved"><Bookmark className="mr-2 h-4 w-4" />Saved</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link></DropdownMenuItem>
-                    {p?.role === "admin" && <DropdownMenuItem asChild><Link href="/admin"><ShieldCheck className="mr-2 h-4 w-4" />Admin</Link></DropdownMenuItem>}
+                    {(p?.role === "admin" || p?.role === "owner") && <DropdownMenuItem asChild><Link href="/admin"><ShieldCheck className="mr-2 h-4 w-4" />Admin</Link></DropdownMenuItem>}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => signOut({ redirectUrl: basePath || "/" })} data-testid="button-sign-out"><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
                   </DropdownMenuContent>

@@ -12,4 +12,5 @@ export type ProfileRole = typeof ProfileRole[keyof typeof ProfileRole];
 export const ProfileRole = {
   student: 'student',
   admin: 'admin',
+  owner: 'owner',
 } as const;

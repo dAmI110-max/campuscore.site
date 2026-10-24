@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useLocation, useParams, useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCreateListing, useUpdateListing, useGetListing, getGetListingQueryKey, getListListingsQueryKey, getGetSummaryQueryKey, ListingInputKind, type ListingInput } from "@workspace/api-client-react";
+import { useCreateListing, useUpdateListing, useGetListing, getGetListingQueryKey, getListListingsQueryKey, getGetSummaryQueryKey, ListingInputKind, type ListingInput, type Listing } from "@workspace/api-client-react";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,52 +39,49 @@ export default function ListingForm() {
   const params = useParams<{ id?: string }>();
   const isNew = !params.id;
   const id = Number(params.id);
-  const search = useSearch();
   const me = useMe();
+  const existing = useGetListing(id, { query: { enabled: !isNew && Number.isInteger(id), queryKey: getGetListingQueryKey(id) } });
+  if (me.loading || (!isNew && existing.isLoading)) return <PageSkeleton />;
+  if (!isNew && (existing.error || !existing.data)) return <ErrorState error={existing.error} onRetry={() => existing.refetch()} />;
+  if (!isNew && existing.data && existing.data.ownerId !== me.profile?.id) {
+    return <EmptyState title="You can only edit your own listings" action={<Button asChild variant="outline"><Link href={`/listing/${id}`}>View listing</Link></Button>} />;
+  }
+  // Mount the form only after data is available. Resetting already-mounted Radix
+  // selects races their native form controls and can clear category/visibility.
+  return <ListingEditor key={isNew ? "new" : id} listing={isNew ? undefined : existing.data} universityId={me.profile?.universityId ?? null} />;
+}
+
+function ListingEditor({ listing, universityId }: { listing?: Listing; universityId: number | null }) {
+  const isNew = !listing;
+  const id = listing?.id ?? 0;
+  const search = useSearch();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const create = useCreateListing();
   const update = useUpdateListing();
-  const existing = useGetListing(id, { query: { enabled: !isNew && Number.isInteger(id), queryKey: getGetListingQueryKey(id) } });
+  const [uploading, setUploading] = useState(false);
   const initKind = (new URLSearchParams(search).get("kind") as Kind) || "marketplace";
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: {
+    defaultValues: listing ? {
+      kind: listing.kind, title: listing.title, description: listing.description, category: listing.category,
+      price: listing.price === null ? "" : String(listing.price), location: listing.location,
+      universityId: String(listing.universityId), condition: listing.condition, status: listing.status,
+      images: listing.images, contact: listing.contact, closesAt: listing.closesAt ?? "", resourceUrl: listing.resourceUrl ?? "",
+    } : {
       kind: KIND_MAP[initKind] ? initKind : "marketplace", title: "", description: "", category: "", price: "", location: "",
-      universityId: me.profile?.universityId ? String(me.profile.universityId) : "", condition: "", status: "published",
+      universityId: universityId ? String(universityId) : "", condition: "", status: "published",
       images: [], contact: "", closesAt: "", resourceUrl: "",
     },
   });
-  const inited = useRef<number | null>(null);
-  useEffect(() => {
-    const l = existing.data;
-    if (l && inited.current !== l.id) {
-      inited.current = l.id;
-      form.reset({
-        kind: l.kind, title: l.title, description: l.description, category: l.category, price: l.price === null ? "" : String(l.price),
-        location: l.location, universityId: String(l.universityId), condition: l.condition, status: l.status, images: l.images,
-        contact: l.contact, closesAt: l.closesAt ?? "", resourceUrl: l.resourceUrl ?? "",
-      });
-    }
-  }, [existing.data, form]);
-  useEffect(() => {
-    if (isNew && me.profile?.universityId && !form.getValues("universityId")) form.setValue("universityId", String(me.profile.universityId));
-  }, [isNew, me.profile?.universityId, form]);
 
   const kind = form.watch("kind");
   const meta = KIND_MAP[kind];
 
-  if (!isNew) {
-    if (existing.isLoading) return <PageSkeleton />;
-    if (existing.error || !existing.data) return <ErrorState error={existing.error} onRetry={() => existing.refetch()} />;
-    if (me.profile && existing.data.ownerId !== me.profile.id) {
-      return <EmptyState title="You can only edit your own listings" action={<Button asChild variant="outline"><Link href={`/listing/${id}`}>View listing</Link></Button>} />;
-    }
-  }
-
   function onSubmit(v: Values) {
+    if (uploading) { toast({ title: "Wait for your photos to finish uploading before saving." }); return; }
     const m = KIND_MAP[v.kind];
     const data: ListingInput = {
       kind: v.kind, title: v.title.trim(), description: v.description.trim(), category: v.category.trim(),
@@ -135,7 +132,7 @@ export default function ListingForm() {
             <div className="grid gap-5 sm:grid-cols-2">
               <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem><FormLabel>Category</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={value => { if (value) field.onChange(value); }}>
                     <FormControl><SelectTrigger data-testid="select-category"><SelectValue placeholder="Pick one" /></SelectTrigger></FormControl>
                     <SelectContent>{meta.categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select><FormMessage /></FormItem>
@@ -153,7 +150,7 @@ export default function ListingForm() {
             {meta.showCondition && (
               <FormField control={form.control} name="condition" render={({ field }) => (
                 <FormItem><FormLabel>Condition</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={value => { if (value) field.onChange(value); }}>
                     <FormControl><SelectTrigger data-testid="select-condition"><SelectValue placeholder="Select condition" /></SelectTrigger></FormControl>
                     <SelectContent>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select><FormMessage /></FormItem>
@@ -192,14 +189,14 @@ export default function ListingForm() {
 
           <section className="rounded-2xl border bg-card p-5 sm:p-6">
             <FormField control={form.control} name="images" render={({ field }) => (
-              <FormItem><FormLabel>Photos</FormLabel><ImagePicker value={field.value} onChange={field.onChange} /><FormMessage /></FormItem>
+              <FormItem><FormLabel>Photos</FormLabel><ImagePicker value={field.value} onChange={field.onChange} onUploadingChange={setUploading} /><FormMessage /></FormItem>
             )} />
           </section>
 
           <div className="flex flex-col gap-3 rounded-2xl border bg-card p-5 sm:flex-row sm:items-end sm:justify-between">
             <FormField control={form.control} name="status" render={({ field }) => (
               <FormItem className="sm:w-60"><FormLabel>Visibility</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={field.value} onValueChange={value => { if (value) field.onChange(value); }}>
                   <FormControl><SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="published">Published, visible to all</SelectItem>
@@ -210,7 +207,7 @@ export default function ListingForm() {
             )} />
             <div className="flex gap-2">
               <Button type="button" variant="ghost" onClick={() => history.back()}>Cancel</Button>
-              <Button type="submit" disabled={pending} data-testid="button-submit-listing">{pending ? "Saving" : isNew ? "Save listing" : "Save changes"}</Button>
+              <Button type="submit" disabled={pending || uploading} data-testid="button-submit-listing">{uploading ? "Uploading photos" : pending ? "Saving" : isNew ? "Save listing" : "Save changes"}</Button>
             </div>
           </div>
         </form>

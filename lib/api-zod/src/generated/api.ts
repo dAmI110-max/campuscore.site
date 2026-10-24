@@ -91,7 +91,7 @@ export const GetProfileResponse = zod.object({
   "bio": zod.string(),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
-  "role": zod.enum(['student', 'admin']),
+  "role": zod.enum(['student', 'admin', 'owner']),
   "suspended": zod.boolean(),
   "complete": zod.boolean()
 })
@@ -130,7 +130,7 @@ export const SaveProfileResponse = zod.object({
   "bio": zod.string(),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
-  "role": zod.enum(['student', 'admin']),
+  "role": zod.enum(['student', 'admin', 'owner']),
   "suspended": zod.boolean(),
   "complete": zod.boolean()
 })
@@ -541,6 +541,104 @@ export const CompleteUploadResponse = zod.object({
 })
 
 
+export const getStaffAccessQueryQMax = 120;
+
+export const getStaffAccessQueryPageMax = 100000;
+
+
+
+export const GetStaffAccessQueryParams = zod.object({
+  "q": zod.coerce.string().max(getStaffAccessQueryQMax).optional(),
+  "page": zod.coerce.number().int().min(1).max(getStaffAccessQueryPageMax).optional()
+})
+
+export const GetStaffAccessResponse = zod.object({
+  "users": zod.array(zod.object({
+  "id": zod.string(),
+  "displayName": zod.string(),
+  "username": zod.string().nullable(),
+  "role": zod.enum(['student', 'admin', 'owner']),
+  "suspended": zod.boolean(),
+  "createdAt": zod.string()
+})),
+  "total": zod.number().int(),
+  "page": zod.number().int(),
+  "requests": zod.array(zod.object({
+  "id": zod.number().int(),
+  "requesterId": zod.string(),
+  "requesterName": zod.string(),
+  "targetId": zod.string(),
+  "targetName": zod.string(),
+  "targetUsername": zod.string().nullable(),
+  "action": zod.enum(['promote', 'demote']),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'cancelled']),
+  "decisionReason": zod.string().nullable(),
+  "decidedBy": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "decidedAt": zod.string().nullable()
+}))
+})
+
+
+export const changeStaffRoleBodyTargetIdMax = 128;
+
+export const changeStaffRoleBodyReasonMin = 5;
+export const changeStaffRoleBodyReasonMax = 1000;
+
+
+
+export const ChangeStaffRoleBody = zod.object({
+  "targetId": zod.string().min(1).max(changeStaffRoleBodyTargetIdMax),
+  "role": zod.enum(['admin', 'student']),
+  "reason": zod.string().min(changeStaffRoleBodyReasonMin).max(changeStaffRoleBodyReasonMax)
+})
+
+export const ChangeStaffRoleResponse = zod.object({
+  "message": zod.string()
+})
+
+
+export const requestStaffChangeBodyTargetIdMax = 128;
+
+export const requestStaffChangeBodyReasonMin = 5;
+export const requestStaffChangeBodyReasonMax = 1000;
+
+
+
+export const RequestStaffChangeBody = zod.object({
+  "targetId": zod.string().min(1).max(requestStaffChangeBodyTargetIdMax),
+  "action": zod.enum(['promote', 'demote']),
+  "reason": zod.string().min(requestStaffChangeBodyReasonMin).max(requestStaffChangeBodyReasonMax)
+})
+
+export const RequestStaffChangeResponse = zod.object({
+  "message": zod.string()
+})
+
+
+
+
+
+export const DecideStaffRequestParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const decideStaffRequestBodyReasonMin = 5;
+export const decideStaffRequestBodyReasonMax = 1000;
+
+
+
+export const DecideStaffRequestBody = zod.object({
+  "decision": zod.enum(['approve', 'reject']),
+  "reason": zod.string().min(decideStaffRequestBodyReasonMin).max(decideStaffRequestBodyReasonMax)
+})
+
+export const DecideStaffRequestResponse = zod.object({
+  "message": zod.string()
+})
+
+
 export const GetAdminOverviewResponse = zod.object({
   "reports": zod.array(zod.object({
   "id": zod.string(),
@@ -582,6 +680,11 @@ export const GetAdminOverviewResponse = zod.object({
   "sourceUrl": zod.string(),
   "active": zod.boolean()
 }))
+})
+
+
+export const ImportOfficialDirectoryResponse = zod.object({
+  "message": zod.string()
 })
 
 

@@ -72,7 +72,7 @@ router.get("/listings/:id", async (req, res): Promise<void> => {
   let admin = false;
   if (uid) {
     const [user] = await db.select().from(p).where(eq(p.id, uid));
-    admin = !!user && !user.suspended && user.role === "admin";
+    admin = !!user && !user.suspended && (user.role === "admin" || user.role === "owner");
   }
   res.json(GetListingResponse.parse(await listingById(id, uid, admin)));
 });

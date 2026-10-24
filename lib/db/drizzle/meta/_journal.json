@@ -15,6 +15,13 @@
       "when": 1792849326342,
       "tag": "0001_amusing_joshua_kane",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792850521185,
+      "tag": "0002_known_molly_hayes",
+      "breakpoints": true
     }
   ]
 }

@@ -137,6 +137,7 @@ export type ProfileRole = typeof ProfileRole[keyof typeof ProfileRole];
 export const ProfileRole = {
   student: 'student',
   admin: 'admin',
+  owner: 'owner',
 } as const;
 
 export interface Profile {
@@ -296,6 +297,131 @@ export interface UploadResult {
   url: string;
 }
 
+export type StaffUserRole = typeof StaffUserRole[keyof typeof StaffUserRole];
+
+
+export const StaffUserRole = {
+  student: 'student',
+  admin: 'admin',
+  owner: 'owner',
+} as const;
+
+export interface StaffUser {
+  id: string;
+  displayName: string;
+  /** @nullable */
+  username: string | null;
+  role: StaffUserRole;
+  suspended: boolean;
+  createdAt: string;
+}
+
+export type StaffRequestAction = typeof StaffRequestAction[keyof typeof StaffRequestAction];
+
+
+export const StaffRequestAction = {
+  promote: 'promote',
+  demote: 'demote',
+} as const;
+
+export type StaffRequestStatus = typeof StaffRequestStatus[keyof typeof StaffRequestStatus];
+
+
+export const StaffRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  cancelled: 'cancelled',
+} as const;
+
+export interface StaffRequest {
+  id: number;
+  requesterId: string;
+  requesterName: string;
+  targetId: string;
+  targetName: string;
+  /** @nullable */
+  targetUsername: string | null;
+  action: StaffRequestAction;
+  reason: string;
+  status: StaffRequestStatus;
+  /** @nullable */
+  decisionReason: string | null;
+  /** @nullable */
+  decidedBy: string | null;
+  createdAt: string;
+  /** @nullable */
+  decidedAt: string | null;
+}
+
+export interface StaffAccess {
+  users: StaffUser[];
+  total: number;
+  page: number;
+  requests: StaffRequest[];
+}
+
+export type StaffRoleInputRole = typeof StaffRoleInputRole[keyof typeof StaffRoleInputRole];
+
+
+export const StaffRoleInputRole = {
+  admin: 'admin',
+  student: 'student',
+} as const;
+
+export interface StaffRoleInput {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  targetId: string;
+  role: StaffRoleInputRole;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type StaffRequestInputAction = typeof StaffRequestInputAction[keyof typeof StaffRequestInputAction];
+
+
+export const StaffRequestInputAction = {
+  promote: 'promote',
+  demote: 'demote',
+} as const;
+
+export interface StaffRequestInput {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  targetId: string;
+  action: StaffRequestInputAction;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type StaffDecisionInputDecision = typeof StaffDecisionInputDecision[keyof typeof StaffDecisionInputDecision];
+
+
+export const StaffDecisionInputDecision = {
+  approve: 'approve',
+  reject: 'reject',
+} as const;
+
+export interface StaffDecisionInput {
+  decision: StaffDecisionInputDecision;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
 export interface AdminRecord {
   id: string;
   title: string;
@@ -402,5 +528,17 @@ export const ListListingsSort = {
 
 export type ToggleSavedListing200 = {
   saved: boolean;
+};
+
+export type GetStaffAccessParams = {
+/**
+ * @maxLength 120
+ */
+q?: string;
+/**
+ * @minimum 1
+ * @maximum 100000
+ */
+page?: number;
 };
 

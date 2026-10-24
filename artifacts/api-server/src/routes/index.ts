@@ -5,6 +5,7 @@ import profilesRouter from "./profiles";
 import listingsRouter from "./listings";
 import adminRouter from "./admin";
 import storageRouter from "./storage";
+import accessRouter from "./staff-access";
 
 const router: IRouter = Router();
 
@@ -13,6 +14,7 @@ router.use(directoryRouter);
 router.use(profilesRouter);
 router.use(listingsRouter);
 router.use(adminRouter);
+router.use(accessRouter);
 router.use(storageRouter);
 
 export default router;

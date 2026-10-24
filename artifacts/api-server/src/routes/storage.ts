@@ -6,6 +6,7 @@ import { RequestUploadUrlBody, RequestUploadUrlResponse, CompleteUploadBody, Com
 import { account, identity } from "../lib/auth";
 import { HttpError } from "../lib/errors";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
+import { sanitizeImage } from "../lib/image-safety";
 
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
@@ -19,14 +20,18 @@ function detectedMime(bytes: Buffer): string | null {
 router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   const user = await account(req);
   const body = RequestUploadUrlBody.parse(req.body);
-  const [recent] = await db.select({ count: count() }).from(u).where(and(eq(u.ownerId, user.id), gte(u.createdAt, new Date(Date.now() - 3600000))));
-  if (recent.count >= 60) throw new HttpError(429, "Upload limit reached. Please try again in an hour.");
   if (!process.env.PRIVATE_OBJECT_DIR) throw new HttpError(503, "File storage is not configured. Your changes have not been saved.");
-  const uploadURL = await storage.getObjectEntityUploadURL();
-  const objectPath = storage.normalizeObjectEntityPath(uploadURL);
-  if (!validPath.test(objectPath)) throw new HttpError(500, "Storage returned an invalid upload path.");
-  await db.insert(u).values({ objectPath, ownerId: user.id, contentType: body.contentType, size: body.size });
-  res.json(RequestUploadUrlResponse.parse({ uploadURL, objectPath }));
+  const ticket = await db.transaction(async tx => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`upload-ticket:${user.id}`}))`);
+    const [recent] = await tx.select({ count: count() }).from(u).where(and(eq(u.ownerId, user.id), eq(u.complete, false), gte(u.createdAt, new Date(Date.now() - 3600000))));
+    if (recent.count >= 60) throw new HttpError(429, "Upload limit reached. Please try again in an hour.");
+    const uploadURL = await storage.getObjectEntityUploadURL();
+    const objectPath = storage.normalizeObjectEntityPath(uploadURL);
+    if (!validPath.test(objectPath)) throw new HttpError(500, "Storage returned an invalid upload path.");
+    await tx.insert(u).values({ objectPath, ownerId: user.id, contentType: body.contentType, size: body.size });
+    return { uploadURL, objectPath };
+  });
+  res.json(RequestUploadUrlResponse.parse(ticket));
 });
 router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
   const user = await account(req);
@@ -48,11 +53,16 @@ router.post("/storage/uploads/complete", async (req, res): Promise<void> => {
     const chunks: Buffer[] = [];
     for await (const chunk of version.createReadStream({ start: 0, end: 31 })) chunks.push(Buffer.from(chunk));
     if (detectedMime(Buffer.concat(chunks)) !== ticket.contentType) throw new HttpError(400, "The uploaded file is not a supported image.");
-    // Never serve the PUT-signed staging object: copy into an unguessable immutable path.
+    const [source] = await version.download();
+    const sanitized = await sanitizeImage(source);
+    // Strip metadata and malicious trailing content; the signed staging object is never served.
     const destinationPath = `/objects/uploads/${randomUUID()}`;
     const destinationName = `${storage.getPrivateObjectDir().split("/").filter(Boolean).slice(1).join("/")}/uploads/${destinationPath.split("/").at(-1)}`;
-    await version.copy(file.bucket.file(destinationName));
-    await tx.insert(u).values({ objectPath: destinationPath, ownerId: user.id, contentType: ticket.contentType, size: ticket.size, complete: true });
+    await file.bucket.file(destinationName).save(sanitized, {
+      resumable: false, preconditionOpts: { ifGenerationMatch: 0 },
+      metadata: { contentType: "image/webp", cacheControl: "private, max-age=60" },
+    });
+    await tx.insert(u).values({ objectPath: destinationPath, ownerId: user.id, contentType: "image/webp", size: sanitized.length, complete: true });
     await tx.update(u).set({ finalizedPath: destinationPath }).where(eq(u.objectPath, objectPath));
     return destinationPath;
   });

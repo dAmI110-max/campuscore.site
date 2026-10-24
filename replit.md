@@ -37,9 +37,10 @@ Everything students need. One place. A university-agnostic student platform, ini
 
 - Kept existing Express/Postgres foundation instead of introducing a parallel Supabase stack. Managed identity and App Storage provide the required companion services.
 - Only the backend receives database credentials. RLS is enabled without public policies; the backend owner bypasses RLS and must enforce end-user authorization on every route.
-- No automatic first-user admin. Explicit operator script resolves an existing verified account in each environment; production identity must not be copied from development.
+- No automatic first-user admin. Only the server-configured PLATFORM_OWNER_EMAIL can receive the one-time owner grant, after server-side Clerk email verification in the target environment. Production identities must not be copied from development.
 - Faculty/department fields can remain unset while verified coverage is incomplete, rather than blocking all students or inventing their departments.
-- Staging image objects are never served. Finalization checks declared size/type and magic bytes, then copies a pinned object generation to an unsigned immutable destination.
+- Staging image objects are never served. Finalization checks size/type/magic bytes, decodes a pinned object generation, strips metadata and writes an immutable resized WebP. Expired staging files are cleaned in bounded batches.
+- Ownership privacy and role-governance intent: see `.agents/memory/owner-governance.md`.
 
 ## Gotchas
 
@@ -47,4 +48,5 @@ Everything students need. One place. A university-agnostic student platform, ini
 - Keep Clerk's canonical production proxy and wildcard auth routes.
 - Generate API schemas after contract edits. React Query codegen is v5; client TypeScript includes `dom.iterable`.
 - Replit Publish manages production schema changes. No startup DDL or custom production migration hooks.
+- Non-obvious schema/type-tooling behaviour: see `.agents/memory/workspace-validation.md`.
 - The unused mockup sandbox is not the product UI.

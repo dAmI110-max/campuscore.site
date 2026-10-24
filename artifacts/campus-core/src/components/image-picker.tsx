@@ -1,24 +1,32 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { storageUrl } from "@/lib/format";
 
 /** Multi-image picker. Only finalized object paths are added to value. */
-export function ImagePicker({ value, onChange, max = 6 }: { value: string[]; onChange: (v: string[]) => void; max?: number }) {
+export function ImagePicker({ value, onChange, max = 6, onUploadingChange }: { value: string[]; onChange: (v: string[]) => void; max?: number; onUploadingChange?: (busy: boolean) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const { upload, busy, error } = useImageUpload();
+  const [selecting, setSelecting] = useState(false);
+  const active = busy || selecting;
+  useEffect(() => { onUploadingChange?.(active); }, [active, onUploadingChange]);
 
   async function onFiles(files: FileList | null) {
     if (!files) return;
+    setSelecting(true);
     let next = [...value];
-    for (const file of Array.from(files)) {
-      if (next.length >= max) break;
-      const path = await upload(file);
-      if (path) { next = [...next, path]; onChange(next); }
-      else break;
+    try {
+      for (const file of Array.from(files)) {
+        if (next.length >= max) break;
+        const path = await upload(file);
+        if (path) { next = [...next, path]; onChange(next); }
+        else break;
+      }
+    } finally {
+      setSelecting(false);
+      if (input.current) input.current.value = "";
     }
-    if (input.current) input.current.value = "";
   }
 
   return (
@@ -28,11 +36,11 @@ export function ImagePicker({ value, onChange, max = 6 }: { value: string[]; onC
           <div key={p} className="group relative aspect-square overflow-hidden rounded-xl border bg-muted">
             <img src={storageUrl(p)} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
             {i === 0 && <span className="absolute bottom-1 left-1 rounded bg-background/90 px-1.5 text-[10px] font-semibold">Cover</span>}
-            <button type="button" onClick={() => onChange(value.filter((x) => x !== p))} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/90" aria-label="Remove photo" data-testid={`button-remove-image-${i}`}><X className="h-3.5 w-3.5" /></button>
+            <button type="button" disabled={active} onClick={() => onChange(value.filter((x) => x !== p))} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/90" aria-label="Remove photo" data-testid={`button-remove-image-${i}`}><X className="h-3.5 w-3.5" /></button>
           </div>
         ))}
         {value.length < max && (
-          <button type="button" onClick={() => input.current?.click()} disabled={busy} className="grid aspect-square place-items-center rounded-xl border-2 border-dashed text-muted-foreground hover:border-primary hover:text-primary" data-testid="button-add-image">
+          <button type="button" onClick={() => input.current?.click()} disabled={active} className="grid aspect-square place-items-center rounded-xl border-2 border-dashed text-muted-foreground hover:border-primary hover:text-primary" data-testid="button-add-image">
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
             <span className="sr-only">Add photo</span>
           </button>
@@ -45,9 +53,10 @@ export function ImagePicker({ value, onChange, max = 6 }: { value: string[]; onC
   );
 }
 
-export function AvatarPicker({ value, onChange, fallback }: { value: string | null; onChange: (v: string | null) => void; fallback: string }) {
+export function AvatarPicker({ value, onChange, fallback, onUploadingChange }: { value: string | null; onChange: (v: string | null) => void; fallback: string; onUploadingChange?: (busy: boolean) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const { upload, busy, error } = useImageUpload();
+  useEffect(() => { onUploadingChange?.(busy); }, [busy, onUploadingChange]);
   async function onFile(file?: File) {
     if (!file) return;
     const p = await upload(file);

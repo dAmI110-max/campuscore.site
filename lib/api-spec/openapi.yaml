@@ -213,6 +213,62 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/UploadResult" }
+  /admin/access:
+    get:
+      operationId: getStaffAccess
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 100000 } }
+      responses:
+        "200":
+          description: Private staff-only account directory and access request history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StaffAccess" }
+  /admin/access/roles:
+    post:
+      operationId: changeStaffRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffRoleInput" }
+      responses:
+        "200":
+          description: Owner-only audited role change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /admin/access/requests:
+    post:
+      operationId: requestStaffChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffRequestInput" }
+      responses:
+        "201":
+          description: Request queued without changing the target role
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /admin/access/requests/{id}/decision:
+    post:
+      operationId: decideStaffRequest
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffDecisionInput" }
+      responses:
+        "200":
+          description: Owner-only atomic decision and optional role change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
   /admin/overview:
     get:
       operationId: getAdminOverview
@@ -222,6 +278,15 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminOverview" }
+  /admin/directory/import-nigeria:
+    post:
+      operationId: importOfficialDirectory
+      responses:
+        "200":
+          description: Owner-triggered additive import from fixed official NUC sources
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
   /admin/directory:
     post:
       operationId: manageDirectory
@@ -342,7 +407,7 @@ components:
         bio: { type: string }
         showAcademics: { type: boolean }
         avatarPath: { type: [string, "null"] }
-        role: { type: string, enum: [student, admin] }
+        role: { type: string, enum: [student, admin, owner] }
         suspended: { type: boolean }
         complete: { type: boolean }
     PublicProfile:
@@ -422,6 +487,61 @@ components:
       properties:
         objectPath: { type: string }
         url: { type: string }
+    StaffUser:
+      type: object
+      required: [id, displayName, username, role, suspended, createdAt]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        username: { type: [string, "null"] }
+        role: { type: string, enum: [student, admin, owner] }
+        suspended: { type: boolean }
+        createdAt: { type: string }
+    StaffRequest:
+      type: object
+      required: [id, requesterId, requesterName, targetId, targetName, targetUsername, action, reason, status, decisionReason, decidedBy, createdAt, decidedAt]
+      properties:
+        id: { type: integer }
+        requesterId: { type: string }
+        requesterName: { type: string }
+        targetId: { type: string }
+        targetName: { type: string }
+        targetUsername: { type: [string, "null"] }
+        action: { type: string, enum: [promote, demote] }
+        reason: { type: string }
+        status: { type: string, enum: [pending, approved, rejected, cancelled] }
+        decisionReason: { type: [string, "null"] }
+        decidedBy: { type: [string, "null"] }
+        createdAt: { type: string }
+        decidedAt: { type: [string, "null"] }
+    StaffAccess:
+      type: object
+      required: [users, total, page, requests]
+      properties:
+        users: { type: array, items: { $ref: "#/components/schemas/StaffUser" } }
+        total: { type: integer }
+        page: { type: integer }
+        requests: { type: array, items: { $ref: "#/components/schemas/StaffRequest" } }
+    StaffRoleInput:
+      type: object
+      required: [targetId, role, reason]
+      properties:
+        targetId: { type: string, minLength: 1, maxLength: 128 }
+        role: { type: string, enum: [admin, student] }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+    StaffRequestInput:
+      type: object
+      required: [targetId, action, reason]
+      properties:
+        targetId: { type: string, minLength: 1, maxLength: 128 }
+        action: { type: string, enum: [promote, demote] }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+    StaffDecisionInput:
+      type: object
+      required: [decision, reason]
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
     AdminOverview:
       type: object
       required: [reports, requests, users, audit, directory]

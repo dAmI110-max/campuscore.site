@@ -32,6 +32,7 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [inst, setInst] = useState<Institution>({ countryId: null, universityId: null, facultyId: null, departmentId: null });
   const [formErr, setFormErr] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const inited = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -72,6 +73,7 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (uploading) return setFormErr("Wait for your photo to finish uploading before saving.");
     setFormErr(null);
     if (displayName.trim().length < 2) return setFormErr("Your name needs at least 2 characters.");
     if (!USER_RE.test(username)) return setFormErr("Choose a valid username.");
@@ -103,7 +105,7 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
       </PageHeader>
       <form onSubmit={submit} className="space-y-6">
         <section className="space-y-5 rounded-2xl border bg-card p-5 sm:p-6">
-          <AvatarPicker value={avatarPath} onChange={setAvatarPath} fallback={initials(displayName)} />
+          <AvatarPicker value={avatarPath} onChange={setAvatarPath} fallback={initials(displayName)} onUploadingChange={setUploading} />
           <div className="grid gap-5 sm:grid-cols-2">
             <div><Label htmlFor="dn">Display name</Label><Input id="dn" className="mt-1.5" value={displayName} maxLength={80} onChange={(e) => setDisplayName(e.target.value)} data-testid="input-display-name" /></div>
             <div>
@@ -136,7 +138,7 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
 
         {formErr && <p className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" data-testid="text-form-error">{formErr}</p>}
         <div className="flex justify-end">
-          <Button type="submit" size="lg" disabled={save.isPending} data-testid="button-save-profile">{save.isPending ? "Saving" : onboarding ? "Finish setup" : "Save profile"}</Button>
+          <Button type="submit" size="lg" disabled={save.isPending || uploading} data-testid="button-save-profile">{uploading ? "Uploading photo" : save.isPending ? "Saving" : onboarding ? "Finish setup" : "Save profile"}</Button>
         </div>
       </form>
     </div>

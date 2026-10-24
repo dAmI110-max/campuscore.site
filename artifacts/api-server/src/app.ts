@@ -35,8 +35,8 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: "same-site" } }));
-app.use(express.json({ limit: "128kb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "128kb", inflate: false }));
+app.use(express.urlencoded({ extended: false, limit: "128kb", inflate: false, parameterLimit: 50 }));
 app.use(clerkMiddleware((req) => ({
   publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
 })));
@@ -65,6 +65,8 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (code === "23505") { res.status(409).json({ error: "That username or record is already in use. Please choose another." }); return; }
   if (code === "23503" || code === "23514") { res.status(400).json({ error: "The selected record or value is invalid. Refresh and try again." }); return; }
   if (err?.type === "entity.too.large") { res.status(413).json({ error: "Request too large." }); return; }
+  if (err?.type === "encoding.unsupported") { res.status(415).json({ error: "Compressed request bodies are not supported." }); return; }
+  if (err?.type === "entity.parse.failed") { res.status(400).json({ error: "Invalid JSON request body." }); return; }
   req.log.error({ err }, "Request failed");
   res.status(500).json({ error: "Something went wrong. Your request could not be completed. Please try again." });
 };

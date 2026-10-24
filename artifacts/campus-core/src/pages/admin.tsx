@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Plus, Pencil, ExternalLink } from "lucide-react";
+import { ShieldCheck, Plus, KeyRound, Pencil, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
-import { useGetAdminOverview, getGetAdminOverviewQueryKey, useModerate, useManageDirectory, getGetDirectoryQueryKey, getListListingsQueryKey, getGetSummaryQueryKey, type AdminRecord, type DirectoryEntry, type DirectoryInputKind, type ModerationInputAction } from "@workspace/api-client-react";
+import { useGetAdminOverview, getGetAdminOverviewQueryKey, useModerate, useManageDirectory, useImportOfficialDirectory, getGetDirectoryQueryKey, getListListingsQueryKey, getGetSummaryQueryKey, type AdminRecord, type DirectoryEntry, type DirectoryInputKind, type ModerationInputAction } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ const ACTION_LABEL: Record<ModerationInputAction, string> = {
 
 export default function Admin() {
   const me = useMe();
-  const isAdmin = me.profile?.role === "admin";
+  const isAdmin = me.profile?.role === "admin" || me.profile?.role === "owner";
   const { data, isLoading, error, refetch } = useGetAdminOverview({ query: { enabled: isAdmin, queryKey: getGetAdminOverviewQueryKey() } });
   const [mod, setMod] = useState<{ action: ModerationInputAction; targetId: string; title: string } | null>(null);
 
@@ -37,6 +37,7 @@ export default function Admin() {
   return (
     <div>
       <PageHeader eyebrow="Administration" title="Moderation desk">Every action needs a reason and is recorded in the audit log.</PageHeader>
+      <div className="mb-4"><Button asChild variant="outline" size="sm"><Link href="/admin/access" data-testid="link-staff-access"><KeyRound className="mr-2 h-4 w-4" />Staff access</Link></Button></div>
       <Tabs defaultValue="reports">
         <TabsList className="mb-4 flex h-auto flex-wrap justify-start">
           <TabsTrigger value="reports" data-testid="tab-reports">Reports ({data.reports.length})</TabsTrigger>
@@ -61,17 +62,65 @@ export default function Admin() {
           )} note="To approve a request, add the entry in the Directory tab after confirming the official source, then dismiss the request." />
         </TabsContent>
         <TabsContent value="users">
-          <Records items={data.users} empty="No users yet." actions={(r) => r.status === "suspended" ? (
+          <Records items={data.users} empty="No users yet." actions={(r) => r.status === "owner" || r.status === "admin" ? (
+            <span className="font-mono text-xs text-muted-foreground">Staff account, manage in Staff access</span>
+          ) : r.status === "suspended" ? (
             <Button size="sm" onClick={() => open("restore-user", r.targetId, r.title)} data-testid={`button-restore-${r.id}`}>Restore</Button>
           ) : (
             <Button size="sm" variant="outline" className="text-destructive" onClick={() => open("suspend-user", r.targetId, r.title)} data-testid={`button-suspend-${r.id}`}>Suspend</Button>
           )} />
         </TabsContent>
         <TabsContent value="listings"><ListingTools onAct={open} /></TabsContent>
-        <TabsContent value="directory"><DirectoryManager entries={data.directory} /></TabsContent>
+        <TabsContent value="directory">
+          {me.profile?.role === "owner" && <OfficialDirectoryImport />}
+          <DirectoryManager entries={data.directory} />
+        </TabsContent>
         <TabsContent value="audit"><Records items={data.audit} empty="No moderation actions recorded yet." /></TabsContent>
       </Tabs>
       <ModerateDialog target={mod} onClose={() => setMod(null)} />
+    </div>
+  );
+}
+
+function OfficialDirectoryImport() {
+  const [open, setOpen] = useState(false);
+  const mutation = useImportOfficialDirectory();
+  const client = useQueryClient();
+  const { toast } = useToast();
+  return (
+    <div className="mb-5 rounded-xl border bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-medium">Official Nigerian university directory</h2>
+          <p className="text-sm text-muted-foreground">Owner-only setup for a new environment. Adds missing entries without deleting existing records.</p>
+        </div>
+        <Button variant="outline" onClick={() => setOpen(true)} data-testid="button-import-directory">Import from NUC</Button>
+      </div>
+      <Dialog open={open} onOpenChange={next => { if (!mutation.isPending) setOpen(next); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import official university records?</DialogTitle>
+            <DialogDescription>
+              Fetch the current federal, state and private university tables from the National Universities Commission.
+              Only missing universities are added. Existing entries are not deleted, changed or reactivated.
+              Faculty and department coverage remains partial. This action is recorded in the audit log.
+            </DialogDescription>
+          </DialogHeader>
+          {mutation.error && <p role="alert" className="text-sm text-destructive">{errMessage(mutation.error)}</p>}
+          <DialogFooter>
+            <Button variant="ghost" disabled={mutation.isPending} onClick={() => setOpen(false)}>Cancel</Button>
+            <Button disabled={mutation.isPending} data-testid="button-confirm-import-directory" onClick={() => mutation.mutate(undefined, {
+              onSuccess: result => {
+                client.invalidateQueries({ queryKey: getGetAdminOverviewQueryKey() });
+                client.invalidateQueries({ queryKey: getGetDirectoryQueryKey() });
+                client.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+                setOpen(false);
+                toast({ title: "Directory import completed", description: result.message });
+              },
+            })}>{mutation.isPending ? "Verifying official sources…" : "Import NUC universities"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
