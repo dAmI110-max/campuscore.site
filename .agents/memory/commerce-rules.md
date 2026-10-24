@@ -9,6 +9,12 @@ The requested payment provider is Paystack for marketplace purchases and Seller 
 
 **How to apply:** Agree any provider change with the user before integrating it. Start in test mode and leave live charges disabled until credentials, verification and webhooks are configured and tested.
 
+Campus Core's intended payment-account country is Nigeria, operating as an individual / not registered as a business yet.
+
+**Why:** The user explicitly supplied this merchant eligibility information.
+
+**How to apply:** Evaluate providers for that actual status. Do not assume an overseas entity or registered company, and keep live payments disabled until merchant and withdrawal eligibility are verified.
+
 Buyer/seller permissions are separate from staff authority. Preserve existing accounts, data and owner governance when introducing commerce experiences.
 
 **Why:** The user requires distinct buyer/seller dashboards without letting ordinary commerce roles grant administrator access.
