@@ -33,8 +33,8 @@ Financial analytics must separate verified marketplace volume, platform fees/act
 
 **How to apply:** Reconcile figures with persistent verified records and account correctly for refunds/reversals. Do not claim escrow, automatic seller payouts or automatic refunds unless independently configured, implemented and tested.
 
-Supported checkout currency does not establish merchant-country or payout eligibility.
+Supported checkout currency or a ready integration does not establish merchant-country or payout eligibility.
 
-**Why:** Provider evaluation showed that documented NGN pricing was not sufficient to confirm Nigerian merchant onboarding or withdrawals.
+**Why:** Provider evaluation showed that documented NGN pricing was not sufficient to confirm Nigerian merchant onboarding or withdrawals. Whop auto-provisioning produced a US-marked store for the intended Nigerian merchant, and an authenticated Nigerian payout-method lookup returned no methods.
 
-**How to apply:** Establish the actual payment-account country and business-registration status, then verify official provider requirements and account-level eligibility before recommending or enabling live payments. Do not infer business jurisdiction from the app's currency or the user's timezone.
+**How to apply:** Establish the actual payment-account country and business-registration status, then verify official provider requirements, the provisioned account's country, and account-level payout eligibility before enabling live payments. Do not infer business jurisdiction from the app's currency or the user's timezone. Do not treat auto-provisioned defaults as verified legal information, change financial identity during a read-only evaluation, or generalize an account-level empty payout result into a permanent worldwide provider restriction.
