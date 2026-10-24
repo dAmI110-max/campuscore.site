@@ -9,7 +9,7 @@ Everything students need. One place. A university-agnostic student platform, ini
 - `pnpm run typecheck` — full workspace typecheck.
 - `PORT=26134 BASE_PATH=/ pnpm --filter @workspace/campus-core run build` — frontend production build from shell.
 - `pnpm --filter @workspace/api-server run build` — API production build.
-- `pnpm --filter @workspace/scripts exec tsx --test ../artifacts/api-server/src/campus-core.test.ts` — regression tests (requires running API).
+- `pnpm --filter @workspace/scripts exec tsx --test ../artifacts/api-server/src/campus-core.test.ts ../artifacts/api-server/src/social.test.ts` — core + social regression tests (requires running API).
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate hooks and Zod schemas.
 - `pnpm --filter @workspace/db run push` — development schema only.
 - `pnpm --filter @workspace/db exec drizzle-kit generate --config ./drizzle.config.ts` — SQL schema history.
@@ -18,7 +18,7 @@ Everything students need. One place. A university-agnostic student platform, ini
 ## Stack & Structure
 
 - TypeScript, React + Vite + Wouter, Express 5, PostgreSQL + Drizzle, managed Clerk authentication, App Storage.
-- `lib/api-spec/openapi.yaml` — contract; generated hooks in `lib/api-client-react`.
+- `lib/api-spec/openapi.yaml` + locally allowlisted `social.openapi.yaml` — contract; generated hooks in `lib/api-client-react`.
 - `lib/db/src/schema` — normalized schema; generated SQL snapshots in `lib/db/drizzle`.
 - `artifacts/api-server/src/routes` — domain routers. Server-only credentials, cookie authentication, ownership checks, audited admin actions.
 - `artifacts/campus-core/src/pages` — public discovery, seven boards, listing CRUD, profile, auth, settings, moderation.
@@ -30,13 +30,14 @@ Everything students need. One place. A university-agnostic student platform, ini
 - Do not make this UNIOSUN-only. Academics must remain database-driven and correctly scoped by parent.
 - Do not invent official university/faculty/department data. NUC data is sourced reference information. Academic coverage is explicitly incomplete.
 - Lilac/purple accents on neutral surfaces; mobile-first with light, dark and system themes.
-- Payments, messaging and AI are disabled until genuinely implemented and verified. No wallet/escrow/stored balance.
+- Payments and AI remain disabled. Messaging, private notifications and user safety now use persistent database-backed routes. No wallet/escrow/stored balance.
 - Do not call this first build production-ready. Signed-in journeys and production verification remain launch gates.
 
 ## Architecture Decisions
 
 - Kept existing Express/Postgres foundation instead of introducing a parallel Supabase stack. Managed identity and App Storage provide the required companion services.
-- Only the backend receives database credentials. RLS is enabled without public policies; the backend owner bypasses RLS and must enforce end-user authorization on every route.
+- Only the backend receives database credentials. Existing core routes enforce end-user authorization. Social transactions additionally bind the actor and downgrade to a restricted NOLOGIN database role to enforce RLS; provision the reviewed role/grants as well as table policies in each environment.
+- Private communication/privacy constraints and database-role caveats: `.agents/memory/social-privacy.md`.
 - No automatic first-user admin. Only the server-configured PLATFORM_OWNER_EMAIL can receive the one-time owner grant, after server-side Clerk email verification in the target environment. Production identities must not be copied from development.
 - Faculty/department fields can remain unset while verified coverage is incomplete, rather than blocking all students or inventing their departments.
 - Staging image objects are never served. Finalization checks size/type/magic bytes, decodes a pinned object generation, strips metadata and writes an immutable resized WebP. Expired staging files are cleaned in bounded batches.

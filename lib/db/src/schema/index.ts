@@ -3,3 +3,5 @@ export * from "./profiles";
 export * from "./listings";
 export * from "./moderation";
 export * from "./uploads";
+export * from "./social";
+export * from "./roles";

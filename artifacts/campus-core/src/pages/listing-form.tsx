@@ -183,7 +183,7 @@ function ListingEditor({ listing, universityId }: { listing?: Listing; universit
             </div>
             <FormField control={form.control} name="contact" render={({ field }) => (
               <FormItem><FormLabel>How to reach you</FormLabel><FormControl><Input {...field} maxLength={250} placeholder="Phone, WhatsApp number or email" data-testid="input-contact" /></FormControl>
-                <FormDescription>Visible to signed-in students. In-app messaging is not available, so this is how people contact you.</FormDescription><FormMessage /></FormItem>
+                <FormDescription>Visible to signed-in students. Students can also message you privately on Campus Core. Optional.</FormDescription><FormMessage /></FormItem>
             )} />
           </section>
 

@@ -17,6 +17,7 @@ export default defineConfig({
   "api-client-react": {
     input: {
       target: "./openapi.yaml",
+      parserOptions: { externalRefs: { allow: ["./social.openapi.yaml"] } },
       override: {
         transformer: titleTransformer,
       },
@@ -44,6 +45,7 @@ export default defineConfig({
   zod: {
     input: {
       target: "./openapi.yaml",
+      parserOptions: { externalRefs: { allow: ["./social.openapi.yaml"] } },
       override: {
         transformer: titleTransformer,
       },
@@ -58,10 +60,8 @@ export default defineConfig({
       prettier: true,
       override: {
         zod: {
-          // Orval resolves `auto` from lib/api-spec/package.json, which has no
-          // zod dependency, so orval >= 8.23 falls back to Zod 4 syntax while
-          // the catalog installs zod 3. Pin to match the catalog.
-          version: 3,
+          // Match the workspace Zod catalog rather than Orval's auto detection.
+          version: 4,
           coerce: {
             query: ['boolean', 'number', 'string'],
             param: ['boolean', 'number', 'string'],

@@ -1,8 +1,9 @@
-import { pgTable, serial, text, integer, timestamp, check, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, pgPolicy, serial, text, integer, timestamp, check, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { profilesTable } from "./profiles";
 import { listingsTable } from "./listings";
+import { socialRole } from "./roles";
 
 export const reportsTable = pgTable("reports", {
   id: serial("id").primaryKey(),
@@ -20,7 +21,12 @@ export const auditTable = pgTable("audit_log", {
   targetId: text("target_id").notNull(),
   reason: text("reason").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}).enableRLS();
+}, t => [
+  pgPolicy("social_staff_audit_insert", { for: "insert", to: socialRole, withCheck:
+    sql`${t.actorId} = nullif(current_setting('app.user_id', true), '') and exists
+      (select 1 from profiles where id = nullif(current_setting('app.user_id', true), '')
+       and role in ('admin','owner') and not suspended)` }),
+]).enableRLS();
 export const insertAuditSchema = createInsertSchema(auditTable).omit({ id: true, createdAt: true });
 
 export const accessRequestsTable = pgTable("access_requests", {

@@ -6,7 +6,6 @@ export function UnavailableNote({ features = ["messaging", "payments"] }: { feat
   const { data } = useGetSummary({ query: { queryKey: getGetSummaryQueryKey(), staleTime: 60_000 } });
   if (!data) return null;
   const off: string[] = [];
-  if (features.includes("messaging") && !data.messagingEnabled) off.push("In-app messaging is not available yet, so reach out using the contact details the poster shared.");
   if (features.includes("payments") && !data.paymentsEnabled) off.push("Payments do not go through Campus Core. Never send money before you have verified the person and the item.");
   if (features.includes("ai") && !data.aiEnabled) off.push("AI assistance is turned off.");
   if (!off.length) return null;

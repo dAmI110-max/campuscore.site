@@ -6,6 +6,34 @@ info:
 servers:
   - url: /api
 paths:
+  /people:
+    $ref: "./social.openapi.yaml#/paths/~1people"
+  /social/summary:
+    $ref: "./social.openapi.yaml#/paths/~1social~1summary"
+  /conversations:
+    $ref: "./social.openapi.yaml#/paths/~1conversations"
+  /conversations/{id}:
+    $ref: "./social.openapi.yaml#/paths/~1conversations~1{id}"
+  /conversations/{id}/messages:
+    $ref: "./social.openapi.yaml#/paths/~1conversations~1{id}~1messages"
+  /conversations/{id}/read:
+    $ref: "./social.openapi.yaml#/paths/~1conversations~1{id}~1read"
+  /notifications:
+    $ref: "./social.openapi.yaml#/paths/~1notifications"
+  /notifications/{id}/read:
+    $ref: "./social.openapi.yaml#/paths/~1notifications~1{id}~1read"
+  /notifications/read-all:
+    $ref: "./social.openapi.yaml#/paths/~1notifications~1read-all"
+  /safety/blocks:
+    $ref: "./social.openapi.yaml#/paths/~1safety~1blocks"
+  /safety/blocks/{username}:
+    $ref: "./social.openapi.yaml#/paths/~1safety~1blocks~1{username}"
+  /safety/reports:
+    $ref: "./social.openapi.yaml#/paths/~1safety~1reports"
+  /admin/user-reports:
+    $ref: "./social.openapi.yaml#/paths/~1admin~1user-reports"
+  /admin/user-reports/{id}/review:
+    $ref: "./social.openapi.yaml#/paths/~1admin~1user-reports~1{id}~1review"
   /healthz:
     get:
       operationId: healthCheck
@@ -103,8 +131,9 @@ paths:
         - { name: q, in: query, schema: { type: string } }
         - { name: universityId, in: query, schema: { type: integer } }
         - { name: category, in: query, schema: { type: string } }
-        - { name: minPrice, in: query, schema: { type: number, minimum: 0 } }
-        - { name: maxPrice, in: query, schema: { type: number, minimum: 0 } }
+        - { name: condition, in: query, schema: { type: string, enum: [New, Like new, Good, Fair, For parts] } }
+        - { name: minPrice, in: query, schema: { type: number, minimum: 0, maximum: 1000000000 } }
+        - { name: maxPrice, in: query, schema: { type: number, minimum: 0, maximum: 1000000000 } }
         - { name: location, in: query, schema: { type: string } }
         - { name: sort, in: query, schema: { type: string, enum: [newest, price-low, price-high] } }
         - { name: mine, in: query, schema: { type: boolean } }

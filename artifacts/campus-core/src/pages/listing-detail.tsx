@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EmptyState, ErrorState, PageSkeleton } from "@/components/states";
 import { UnavailableNote } from "@/components/unavailable-note";
+import { MessageButton } from "@/components/message-button";
 import { useMe } from "@/hooks/use-me";
 import { useToast } from "@/hooks/use-toast";
 import { KIND_MAP } from "@/lib/kinds";
@@ -152,6 +153,7 @@ export default function ListingDetail() {
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">Posted by</p>
             <Link href={`/people/${l.sellerUsername}`} className="mt-2 block font-display text-lg font-semibold hover:text-primary" data-testid="link-seller">{l.sellerName}</Link>
             <p className="text-sm text-muted-foreground">@{l.sellerUsername}</p>
+            {!isOwner && <MessageButton username={l.sellerUsername} label="Message poster" className="mt-4 w-full" />}
             <div className="mt-4 rounded-xl bg-muted/70 p-4">
               <p className="flex items-center gap-2 text-sm font-semibold"><Phone className="h-4 w-4 text-primary" />Contact</p>
               {me.signedIn ? (

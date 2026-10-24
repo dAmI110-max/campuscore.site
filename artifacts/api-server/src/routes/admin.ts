@@ -6,6 +6,7 @@ import { administrator } from "../lib/auth";
 import { HttpError } from "../lib/errors";
 import { safeLink, academicEntry } from "../lib/validation";
 import { importOfficialUniversities } from "../lib/official-directory";
+import { setSocialActor, notify } from "../lib/social";
 
 const router: IRouter = Router();
 router.post("/admin/directory/import-nigeria", async (req, res): Promise<void> => {
@@ -58,6 +59,9 @@ router.post("/admin/actions", async (req, res): Promise<void> => {
   const admin = await administrator(req);
   const body = ModerateBody.parse(req.body);
   await db.transaction(async tx => {
+    await setSocialActor(tx, admin.id);
+    const [fresh] = await tx.select().from(p).where(eq(p.id, admin.id)).for("share");
+    if (!fresh || fresh.suspended || (fresh.role !== "admin" && fresh.role !== "owner")) throw new HttpError(403, "Administrator access required.");
     let changed: unknown[] = [];
     if (body.action === "suspend-user" || body.action === "restore-user") {
       if (body.targetId === admin.id) throw new HttpError(400, "You cannot suspend your own account.");
@@ -69,10 +73,15 @@ router.post("/admin/actions", async (req, res): Promise<void> => {
       const id = Number(body.targetId);
       if (body.action === "resolve-report") changed = await tx.update(reportsTable).set({ status: "resolved" }).where(eq(reportsTable.id, id)).returning();
       if (body.action === "dismiss-request") changed = await tx.update(r).set({ status: "reviewed" }).where(eq(r.id, id)).returning();
-      if (body.action === "hide-listing") changed = await tx.update(l).set({ hidden: true, updatedAt: new Date() }).where(eq(l.id, id)).returning();
-      if (body.action === "verify-listing") changed = await tx.update(l).set({ verified: true, updatedAt: new Date() }).where(eq(l.id, id)).returning();
+      if (body.action === "hide-listing") changed = await tx.update(l).set({ hidden: true, updatedAt: new Date() }).where(and(eq(l.id, id), eq(l.hidden, false))).returning();
+      if (body.action === "verify-listing") changed = await tx.update(l).set({ verified: true, updatedAt: new Date() }).where(and(eq(l.id, id), eq(l.verified, false))).returning();
     }
     if (!changed.length) throw new HttpError(404, "Moderation target not found.");
+    if (body.action === "hide-listing" || body.action === "verify-listing") {
+      const listing = changed[0] as typeof l.$inferSelect;
+      await notify(tx, { userId: listing.ownerId, eventKey: `${body.action}:${listing.id}`, kind: "listing-moderated",
+        title: body.action === "hide-listing" ? "A moderator hid your listing" : "A moderator verified your listing", href: `/listing/${listing.id}` });
+    }
     await tx.insert(auditTable).values({ actorId: admin.id, ...body });
   });
   res.json(ModerateResponse.parse({ message: "Action completed and recorded in the audit log." }));

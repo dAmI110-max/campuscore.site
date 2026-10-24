@@ -5,6 +5,7 @@
  * Campus Core API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListListingsCondition } from './listListingsCondition';
 import type { ListListingsKind } from './listListingsKind';
 import type { ListListingsSort } from './listListingsSort';
 
@@ -13,12 +14,15 @@ kind?: ListListingsKind;
 q?: string;
 universityId?: number;
 category?: string;
+condition?: ListListingsCondition;
 /**
  * @minimum 0
+ * @maximum 1000000000
  */
 minPrice?: number;
 /**
  * @minimum 0
+ * @maximum 1000000000
  */
 maxPrice?: number;
 location?: string;

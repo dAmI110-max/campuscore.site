@@ -32,7 +32,7 @@ test("Public counts are genuine zeroes in a new platform", async () => {
   for (const [kind, value] of Object.entries(summary.counts)) assert.equal(value, rows.find(row => row.kind === kind)?.count ?? 0);
   assert.equal(summary.paymentsEnabled, false);
   assert.equal(summary.aiEnabled, false);
-  assert.equal(summary.messagingEnabled, false);
+  assert.equal(summary.messagingEnabled, true);
 });
 test("University search uses sourced database records", async () => {
   const response = await fetch(`${base}/directory?kind=university&q=Osun%20State%20University`);

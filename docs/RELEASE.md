@@ -2,7 +2,7 @@
 
 ## Status
 
-The core release has been hardened with owner-governed administrator access and safe image re-encoding.
+The core release has been hardened with owner-governed administrator access and safe image re-encoding, and extended with private messaging, persistent notifications and user safety.
 No production deployment exists; production approval is still pending publication and live verification.
 No fabricated user activity or listings were seeded.
 
@@ -14,11 +14,16 @@ No fabricated user activity or listings were seeded.
 - Case-normalized usernames, reserved-name validation, availability endpoint and database unique/check constraints.
 - Database-driven searchable country → university → faculty → department selection, missing-entry requests and editable profiles.
 - Profile image upload/change/removal; JPEG, PNG, WebP, 5 MB maximum. Presigned direct upload, owner-bound tickets, metadata/magic-byte verification and immutable finalized objects.
-- Unified genuine-content boards: marketplace, accommodation, services, opportunities, study, communities and events. Create/edit/publish/draft/unavailable/remove, search, university/location/category/price filters, sort and pagination.
+- Unified genuine-content boards: marketplace, accommodation, services, opportunities, study, communities and events. Create/edit/publish/draft/unavailable/remove, search, university/location/category/price/condition filters, sort and pagination. Combined filters persist in the URL across refresh/back/forward; reversed or invalid prices fail explicitly.
 - Listing-owner-only writes; hidden/deleted content excluded from discovery. Contact details omitted from anonymous API responses.
 - Saved listings, report submission, public profile with optional university visibility.
 - Protected administration: sourced directory add/edit/deactivation, report review, institution requests, suspend/restore non-admin accounts, hide/verify listings, audit log. No browser-controlled role escalation.
 - Light/dark/system theme stored per device, responsive public and authenticated page implementations, loading/error/empty states.
+- Registered-user discovery by public name/username with university filtering that respects hidden academics.
+- Private one-to-one conversations, persisted text messages, timestamps, older-history pagination, idempotent send retries, unread counts and visible-tab polling. No attachment/group-chat/read-receipt delivery guarantees are implied.
+- Persistent recipient-only notifications for messages, user-report reviews and listing moderation. Message notification payloads contain no message text.
+- Blocking in either direction prevents new contact; prior conversation history remains accessible to its participants. Unblocking removes only the current user's own block.
+- User reports optionally share exactly one selected received message with staff; staff cannot browse unrelated private conversations. Report reviews are audited and notify the reporter privately.
 
 Communities/events are discoverable postings, not membership/chat/RSVP systems. Study resources support descriptions and external links, not document hosting or an AI tutor.
 
@@ -44,27 +49,64 @@ Not complete; these are launch gates, not implied by a successful build.
 
 ### Later features
 
-Reliable private messaging/notifications, AI study assistant, document storage with permissions and rights checks, actual community memberships/RSVP, admin-managed categories/settings, richer campus-specific accommodation fields, and Paystack payments are separate work. They must not be represented as implemented.
+AI study assistant, document storage with permissions and rights checks, actual community memberships/RSVP, admin-managed categories/settings, richer campus-specific accommodation fields, and Paystack payments are separate work. They must not be represented as implemented.
+
+### Private communication and safety phase
+
+Implemented using the existing database, authentication, generated API clients and design system. Backend regression verification passes 64 checks, including anonymous denials, combined/invalid filters and real restricted-role database isolation. Signed-in browser verification passed the core messaging, notification, safety, staff-privacy and filtering flows.
+
+Messaging uses text only (4,000-character maximum). Client-generated UUID retry keys are unique per sender/conversation. A transaction serializes pair contact/block decisions and saves the message, conversation state and notification atomically. Reusing a successful retry key does not create another message/notification; reusing it with different text rejects explicitly.
+
+Notification counts and conversation read checkpoints are persisted, scoped to their recipient/participant and monotonic. A read acknowledgement specifies the last displayed message, so a concurrently arriving later message is not implicitly marked read.
+
+API request limits are authenticated-user scoped, avoiding one shared university IP exhausting the quota for all students. Separate send/start/report/safety limits constrain abuse.
+
+#### Communication verification — development
+
+- Two fresh Clerk QA identities completed real onboarding UI; form values survived a normal authentication refresh.
+- Two-way messages persisted. A new browser/session for the same identity retrieved the original history from the database.
+- Same-key send retry returned the original message and created no duplicate notification.
+- Unread delivery was observed in both directions. Reading a notification did not incorrectly mark its message read; reloading preserved notification history/read status.
+- Optional report-and-block saved only the selected received message. Duplicate pending reports rejected with 409; attaching one's own message as evidence against another user rejected with 404.
+- Blocking prevented sends in both directions without creating messages/notifications. One user could not remove the other's block; the blocker could unblock successfully.
+- A student was denied staff report access. The genuine owner, as an unrelated nonparticipant, received 404 for conversation read/send/read-marker and another recipient's notification-read attempt.
+- Owner staff UI displayed only submitted evidence, resolved the report and delivered exactly one private review notification to the reporter. Repeated review rejected with 409 and created no duplicate notification.
+- Combined marketplace filters, URL synchronization, Back/Forward, Clear all and reversed-price validation passed. No fake public listing was created to claim a positive-result test.
+- Mobile conversation layout passed at 320px, 390px and 768px, including a long unbroken message; bubble text, composer and action controls stayed within document width.
+- Type checks and frontend/API builds passed. Static security and privacy-dataflow scans reported no findings. Existing build-tool dependency caveats below still apply.
+- The pass exposed protected-route form resets and mobile implicit-grid overflow. Both were fixed and the affected flows passed rechecks.
+- Temporary QA identities and their private conversation, messages, notifications, report and audit activity were removed; genuine owner access was preserved.
+
+Still unverified: actual Google/email verification/recovery round trips, production role/policy provisioning and live owner binding. Optional 50+ message browser pagination/stress coverage was skipped; history paging is implemented, but that larger browser dataset was not exercised. Existing live-listing and production launch gates below remain in force.
 
 ## Database and schema history
 
-Nine application tables:
+Fourteen application tables:
 
 | Table | Purpose and principal protections |
 |---|---|
 | academic_directory | Typed parent-linked country/university/faculty/department records, provenance URL, active state |
 | institution_requests | Authenticated requests, pending/reviewed status; not auto-promoted into verified reference data |
-| profiles | Clerk ID primary key; normalized unique username; student/admin role check; academic foreign keys; suspension and privacy |
+| profiles | Clerk ID primary key; normalized unique username; student/admin/owner role check; academic foreign keys; suspension and privacy |
 | listings | Owner/university foreign keys; constrained kinds/status/prices; images metadata; soft deletion and moderation state |
 | saved_listings | Composite unique user/listing key; serialized toggle |
 | reports | Reporter/listing foreign keys; pending/resolved state |
 | audit_log | Server-written actor/action/target/reason/time |
 | uploads | Owner-bound declared metadata, staged/finalized paths; only finalized owned images may be attached |
 | access_requests | Admin promotion/demotion requests; requester/target/decider foreign keys; constrained action/status and unique pending requests |
+| conversations | Unique sorted participant pair, per-participant read checkpoints and latest-message state |
+| direct_messages | Participant-only history, sender ownership, bounded text and unique per-sender UUID retry key |
+| user_blocks | Blocker-owned changes, no self-block, both directions consulted before contact |
+| notifications | Recipient-only reads/updates, unique recipient/event key; message text excluded |
+| user_reports | Reporter-only history plus staff review; only explicitly submitted message evidence; one pending report per reporter/target |
 
 Drizzle source is the schema authority. `lib/db/drizzle/` contains generated SQL migration history and snapshots. Development schema was applied using Drizzle push. No application startup migrations exist.
 
-RLS is enabled on all application tables with **no public access policies**. The server connects as the managed database owner and therefore bypasses RLS; row-level user permissions are enforced by server code, not magically provided by RLS. This is not a browser-direct Supabase architecture.
+RLS is enabled on all application tables. Existing core routes authorize end users in server code. Private communication adds enforced database policies: each social transaction binds the authenticated actor locally and switches to the restricted `campus_core_social` NOLOGIN role before touching private data. Five social tables also FORCE RLS. This role cannot log in, bypass RLS, change staff access, or read unrelated private messages. Its profile lookup is read-only, and audit insertion is restricted to actual staff.
+
+The development service account was found to bypass RLS despite FORCE; isolation tests now run under the same restricted role used by requests, not merely under the privileged pool account. Sender notification creation intentionally uses plain INSERT after idempotently checking/serializing its source event: conflict upserts would require SELECT access to another recipient's notification. A unique event constraint independently prevents duplicates.
+
+`0003_shallow_lilandra.sql` adds the social tables/policies/forced-RLS settings. `0004_stiff_phantom_reporter.sql` provisions the restricted role, membership, exact table/sequence grants, read-only profile lookup and staff audit policy. Both were applied transactionally in development; there is no startup DDL or silent privileged fallback. Keep these reviewed role permissions with the schema. Replit's documented publishing migration copies custom roles/permissions, but the deployment preview must verify role membership, grants, policies and restricted-role API requests; table synchronization alone is not proof of working RLS. The role has no password to copy or configure.
 
 ## Reference data
 
@@ -140,7 +182,7 @@ Do not hardcode the designated account's email/ID in source, public configuratio
 - Workspace TypeScript typecheck: passed.
 - Frontend Vite production build: passed.
 - API production bundle build: passed.
-- Automated regression suite: **40 passed, 0 failed**.
+- Automated regression suite: **64 passed, 0 failed**.
   - Username normalization/validation and reserved identities.
   - Safe external-link schemes.
   - Genuine counts compared with database records.
@@ -217,7 +259,7 @@ After verification, both temporary Clerk identities, their application profiles,
 - Fac/department are temporarily optional to avoid inventing data. Decide whether complete academic coverage must block registration before commercial launch.
 - Moderation requires human source verification; directory source URLs are provenance, not automatic evidence that every administrator-entered value is legitimate.
 - Categories are static reference choices; admin category/settings CRUD is not implemented.
-- No payment/messaging/notification/AI feature is enabled.
+- Payments and AI remain disabled. Private messaging, in-app notifications and safety are implemented; push/email notification delivery, attachments and group chat are not included.
 - Uploads now validate declared metadata/magic bytes, fully decode with a pixel limit, strip metadata, resize and re-encode into immutable WebP. Per-user issuance is serialized, processing concurrency/memory are bounded, and expired staging objects are cleaned hourly in batches of 100 (also at startup). Full antivirus scanning and unreferenced-final-image retention policies are separate operational enhancements.
 - Rate limiting is process-local and is not a distributed multi-instance abuse-prevention system.
 - Admin overview is bounded to recent queues/users; advanced moderation pagination and listing restoration remain future work.

@@ -461,6 +461,263 @@ export interface ModerationInput {
   reason: string;
 }
 
+export interface SocialAction {
+  message: string;
+}
+
+export interface ChatPerson {
+  username: string;
+  displayName: string;
+  /** @nullable */
+  avatarPath: string | null;
+}
+
+export interface PeoplePage {
+  items: ChatPerson[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface StartConversationInput {
+  /**
+     * @minLength 3
+     * @maxLength 24
+     */
+  username: string;
+}
+
+export interface SendMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  body: string;
+  clientMessageId: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  body: string;
+  isMine: boolean;
+  createdAt: string;
+}
+
+export interface ChatConversation {
+  id: number;
+  peer: ChatPerson;
+  unreadCount: number;
+  canMessage: boolean;
+  blockedByMe: boolean;
+  updatedAt: string;
+  lastMessage: ChatMessage | null;
+}
+
+export interface ConversationPage {
+  items: ChatConversation[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ConversationDetail {
+  conversation: ChatConversation;
+  messages: ChatMessage[];
+  /** @nullable */
+  nextBefore: number | null;
+}
+
+export interface SocialSummary {
+  unreadMessages: number;
+  unreadNotifications: number;
+}
+
+export interface InAppNotification {
+  id: number;
+  kind: string;
+  title: string;
+  href: string;
+  createdAt: string;
+  /** @nullable */
+  readAt: string | null;
+}
+
+export interface NotificationPage {
+  items: InAppNotification[];
+  unreadCount: number;
+  /** @nullable */
+  nextBefore: number | null;
+}
+
+export interface BlockRecord {
+  person: ChatPerson;
+  createdAt: string;
+}
+
+export interface BlockPage {
+  items: BlockRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CreateUserReportInput {
+  /**
+     * @minLength 3
+     * @maxLength 24
+     */
+  username: string;
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  reason: string;
+  /** @minimum 1 */
+  messageId?: number;
+  blockUser?: boolean;
+}
+
+export type ReviewUserReportInputStatus = typeof ReviewUserReportInputStatus[keyof typeof ReviewUserReportInputStatus];
+
+
+export const ReviewUserReportInputStatus = {
+  resolved: 'resolved',
+  dismissed: 'dismissed',
+} as const;
+
+export interface ReviewUserReportInput {
+  status: ReviewUserReportInputStatus;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type UserSafetyReportStatus = typeof UserSafetyReportStatus[keyof typeof UserSafetyReportStatus];
+
+
+export const UserSafetyReportStatus = {
+  pending: 'pending',
+  resolved: 'resolved',
+  dismissed: 'dismissed',
+} as const;
+
+export interface UserSafetyReport {
+  id: number;
+  target: ChatPerson;
+  reason: string;
+  status: UserSafetyReportStatus;
+  /** @nullable */
+  snapshot: string | null;
+  /** @nullable */
+  snapshotAt: string | null;
+  createdAt: string;
+  /** @nullable */
+  decisionReason: string | null;
+  /** @nullable */
+  decidedAt: string | null;
+}
+
+export type AdminSafetyReportTargetRole = typeof AdminSafetyReportTargetRole[keyof typeof AdminSafetyReportTargetRole];
+
+
+export const AdminSafetyReportTargetRole = {
+  student: 'student',
+  admin: 'admin',
+  owner: 'owner',
+} as const;
+
+export type AdminSafetyReport = UserSafetyReport & {
+  reporter: ChatPerson;
+  targetId: string;
+  targetRole: AdminSafetyReportTargetRole;
+};
+
+export interface MyReportPage {
+  items: UserSafetyReport[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminReportPage {
+  items: AdminSafetyReport[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type SearchPeopleParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+universityId?: number;
+/**
+ * @minimum 1
+ */
+page?: number;
+};
+
+export type ListConversationsParams = {
+/**
+ * @minimum 1
+ */
+page?: number;
+};
+
+export type GetConversationParams = {
+before?: number;
+};
+
+export type ReadConversationBody = {
+  /** @minimum 1 */
+  throughMessageId: number;
+};
+
+export type ListNotificationsParams = {
+before?: number;
+unreadOnly?: boolean;
+};
+
+export type ReadAllNotificationsBody = {
+  /** @minimum 1 */
+  throughId: number;
+};
+
+export type ListBlocksParams = {
+/**
+ * @minimum 1
+ */
+page?: number;
+};
+
+export type ListMyUserReportsParams = {
+/**
+ * @minimum 1
+ */
+page?: number;
+};
+
+export type ListUserReportsParams = {
+/**
+ * @minimum 1
+ */
+page?: number;
+status?: ListUserReportsStatus;
+};
+
+export type ListUserReportsStatus = typeof ListUserReportsStatus[keyof typeof ListUserReportsStatus];
+
+
+export const ListUserReportsStatus = {
+  pending: 'pending',
+  resolved: 'resolved',
+  dismissed: 'dismissed',
+  all: 'all',
+} as const;
+
 export type GetDirectoryParams = {
 kind?: GetDirectoryKind;
 parentId?: number;
@@ -486,12 +743,15 @@ kind?: ListListingsKind;
 q?: string;
 universityId?: number;
 category?: string;
+condition?: ListListingsCondition;
 /**
  * @minimum 0
+ * @maximum 1000000000
  */
 minPrice?: number;
 /**
  * @minimum 0
+ * @maximum 1000000000
  */
 maxPrice?: number;
 location?: string;
@@ -515,6 +775,17 @@ export const ListListingsKind = {
   study: 'study',
   communities: 'communities',
   events: 'events',
+} as const;
+
+export type ListListingsCondition = typeof ListListingsCondition[keyof typeof ListListingsCondition];
+
+
+export const ListListingsCondition = {
+  New: 'New',
+  Like_new: 'Like new',
+  Good: 'Good',
+  Fair: 'Fair',
+  For_parts: 'For parts',
 } as const;
 
 export type ListListingsSort = typeof ListListingsSort[keyof typeof ListListingsSort];

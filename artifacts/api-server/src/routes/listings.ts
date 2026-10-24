@@ -11,6 +11,7 @@ import { account, identity } from "../lib/auth";
 import { academicEntry, ownedImages, safeLink } from "../lib/validation";
 import { HttpError } from "../lib/errors";
 import { listingById, listingsQuery, published, wireListing } from "../lib/listing-service";
+import { escapedSearch } from "../lib/social";
 
 const router: IRouter = Router();
 router.get("/summary", async (_req, res): Promise<void> => {
@@ -18,7 +19,7 @@ router.get("/summary", async (_req, res): Promise<void> => {
   const counts = { marketplace: 0, accommodation: 0, services: 0, opportunities: 0, study: 0, communities: 0, events: 0 };
   for (const row of grouped) if (row.kind in counts) counts[row.kind as keyof typeof counts] = row.count;
   const [universities] = await db.select({ count: count() }).from(d).where(and(eq(d.kind, "university"), eq(d.active, true)));
-  res.json(GetSummaryResponse.parse({ counts, universities: universities.count, paymentsEnabled: false, messagingEnabled: false, aiEnabled: false }));
+  res.json(GetSummaryResponse.parse({ counts, universities: universities.count, paymentsEnabled: false, messagingEnabled: true, aiEnabled: false }));
 });
 router.get("/listings", async (req, res): Promise<void> => {
   // Parse boolean query strings explicitly: Boolean("false") is true in JS.
@@ -29,6 +30,7 @@ router.get("/listings", async (req, res): Promise<void> => {
   const params = ListListingsQueryParams.parse({
     ...raw, mine: raw.mine === undefined ? undefined : raw.mine === "true", saved: raw.saved === undefined ? undefined : raw.saved === "true",
   });
+  if (params.minPrice !== undefined && params.maxPrice !== undefined && params.minPrice > params.maxPrice) throw new HttpError(400, "Minimum price cannot exceed maximum price.");
   let userId = identity(req);
   if (params.mine || params.saved) userId = (await account(req)).id;
   const page = Math.min(params.page ?? 1, 10000);
@@ -36,9 +38,10 @@ router.get("/listings", async (req, res): Promise<void> => {
   const filters = and(
     params.mine ? and(eq(l.ownerId, userId!), isNull(l.deletedAt)) : published(),
     params.kind ? eq(l.kind, params.kind) : undefined,
-    params.q ? or(ilike(l.title, `%${params.q.slice(0, 200)}%`), ilike(l.description, `%${params.q.slice(0, 200)}%`)) : undefined,
+    params.q ? or(ilike(l.title, `%${escapedSearch(params.q.slice(0, 200))}%`), ilike(l.description, `%${escapedSearch(params.q.slice(0, 200))}%`)) : undefined,
     params.category ? eq(l.category, params.category) : undefined,
-    params.location ? ilike(l.location, `%${params.location.slice(0, 200)}%`) : undefined,
+    params.condition ? eq(l.condition, params.condition) : undefined,
+    params.location ? ilike(l.location, `%${escapedSearch(params.location.slice(0, 200))}%`) : undefined,
     params.universityId ? eq(l.universityId, params.universityId) : undefined,
     params.minPrice !== undefined ? gte(l.price, params.minPrice) : undefined,
     params.maxPrice !== undefined ? lte(l.price, params.maxPrice) : undefined,

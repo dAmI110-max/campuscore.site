@@ -22,6 +22,20 @@
       "when": 1792850521185,
       "tag": "0002_known_molly_hayes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792854990853,
+      "tag": "0003_shallow_lilandra",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792855241421,
+      "tag": "0004_stiff_phantom_reporter",
+      "breakpoints": true
     }
   ]
 }

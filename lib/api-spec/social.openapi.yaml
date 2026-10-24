@@ -1,0 +1,320 @@
+openapi: 3.1.0
+info: { title: Campus Core communication API, version: 0.1.0 }
+paths:
+  /people:
+    get:
+      operationId: searchPeople
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: universityId, in: query, schema: { type: integer } }
+        - { $ref: "#/components/parameters/Page" }
+      responses:
+        "200":
+          description: Registered active public profiles; no email addresses or staff roles
+          content: { application/json: { schema: { $ref: "#/components/schemas/PeoplePage" } } }
+  /social/summary:
+    get:
+      operationId: getSocialSummary
+      responses:
+        "200":
+          description: Current user's unread counts only
+          content: { application/json: { schema: { $ref: "#/components/schemas/SocialSummary" } } }
+  /conversations:
+    get:
+      operationId: listConversations
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+      responses:
+        "200":
+          description: Participant-only conversations
+          content: { application/json: { schema: { $ref: "#/components/schemas/ConversationPage" } } }
+    post:
+      operationId: startConversation
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/StartConversationInput" } } }
+      responses:
+        "200":
+          description: Existing or newly created unique one-to-one conversation
+          content: { application/json: { schema: { $ref: "#/components/schemas/ChatConversation" } } }
+  /conversations/{id}:
+    get:
+      operationId: getConversation
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+        - { name: before, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Up to fifty messages in ascending order, with an older-history cursor
+          content: { application/json: { schema: { $ref: "#/components/schemas/ConversationDetail" } } }
+  /conversations/{id}/messages:
+    post:
+      operationId: sendMessage
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SendMessageInput" } } }
+      responses:
+        "200":
+          description: Saved message; repeated clientMessageId retries return the same message
+          content: { application/json: { schema: { $ref: "#/components/schemas/ChatMessage" } } }
+  /conversations/{id}/read:
+    post:
+      operationId: readConversation
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [throughMessageId], properties: { throughMessageId: { type: integer, minimum: 1 } } } } }
+      responses:
+        "200": { $ref: "#/components/responses/Action" }
+  /notifications:
+    get:
+      operationId: listNotifications
+      parameters:
+        - { name: before, in: query, schema: { type: integer } }
+        - { name: unreadOnly, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: Private persistent notifications; never contains private message bodies
+          content: { application/json: { schema: { $ref: "#/components/schemas/NotificationPage" } } }
+  /notifications/{id}/read:
+    post:
+      operationId: readNotification
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200": { $ref: "#/components/responses/Action" }
+  /notifications/read-all:
+    post:
+      operationId: readAllNotifications
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [throughId], properties: { throughId: { type: integer, minimum: 1 } } } } }
+      responses:
+        "200": { $ref: "#/components/responses/Action" }
+  /safety/blocks:
+    get:
+      operationId: listBlocks
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+      responses:
+        "200":
+          description: Accounts this user blocked, not accounts that blocked this user
+          content: { application/json: { schema: { $ref: "#/components/schemas/BlockPage" } } }
+  /safety/blocks/{username}:
+    parameters:
+      - { name: username, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: blockUser
+      responses:
+        "200": { $ref: "#/components/responses/Action" }
+    delete:
+      operationId: unblockUser
+      responses:
+        "200": { $ref: "#/components/responses/Action" }
+  /safety/reports:
+    get:
+      operationId: listMyUserReports
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+      responses:
+        "200":
+          description: Current user's own report history
+          content: { application/json: { schema: { $ref: "#/components/schemas/MyReportPage" } } }
+    post:
+      operationId: createUserReport
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CreateUserReportInput" } } }
+      responses:
+        "200":
+          description: Report saved; optional blocking is atomic. Only explicitly reported message evidence reaches staff.
+          content: { application/json: { schema: { $ref: "#/components/schemas/UserSafetyReport" } } }
+  /admin/user-reports:
+    get:
+      operationId: listUserReports
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { name: status, in: query, schema: { type: string, enum: [pending, resolved, dismissed, all] } }
+      responses:
+        "200":
+          description: Staff safety queue; no access to unrelated private conversations
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminReportPage" } } }
+  /admin/user-reports/{id}/review:
+    post:
+      operationId: reviewUserReport
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ReviewUserReportInput" } } }
+      responses:
+        "200": { $ref: "#/components/responses/Action" }
+components:
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+  responses:
+    Action:
+      description: Action saved
+      content: { application/json: { schema: { $ref: "#/components/schemas/SocialAction" } } }
+  schemas:
+    SocialAction:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+    ChatPerson:
+      type: object
+      required: [username, displayName, avatarPath]
+      properties:
+        username: { type: string }
+        displayName: { type: string }
+        avatarPath: { type: string, nullable: true }
+    PeoplePage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/ChatPerson" } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    StartConversationInput:
+      type: object
+      required: [username]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 24 }
+    SendMessageInput:
+      type: object
+      required: [body, clientMessageId]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 4000 }
+        clientMessageId: { type: string, format: uuid }
+    ChatMessage:
+      type: object
+      required: [id, body, isMine, createdAt]
+      properties:
+        id: { type: integer }
+        body: { type: string }
+        isMine: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    ChatConversation:
+      type: object
+      required: [id, peer, unreadCount, canMessage, blockedByMe, updatedAt, lastMessage]
+      properties:
+        id: { type: integer }
+        peer: { $ref: "#/components/schemas/ChatPerson" }
+        unreadCount: { type: integer }
+        canMessage: { type: boolean }
+        blockedByMe: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+        lastMessage:
+          anyOf:
+            - { $ref: "#/components/schemas/ChatMessage" }
+            - { type: "null" }
+    ConversationPage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/ChatConversation" } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    ConversationDetail:
+      type: object
+      required: [conversation, messages, nextBefore]
+      properties:
+        conversation: { $ref: "#/components/schemas/ChatConversation" }
+        messages: { type: array, items: { $ref: "#/components/schemas/ChatMessage" } }
+        nextBefore: { type: integer, nullable: true }
+    SocialSummary:
+      type: object
+      required: [unreadMessages, unreadNotifications]
+      properties:
+        unreadMessages: { type: integer }
+        unreadNotifications: { type: integer }
+    InAppNotification:
+      type: object
+      required: [id, kind, title, href, createdAt, readAt]
+      properties:
+        id: { type: integer }
+        kind: { type: string }
+        title: { type: string }
+        href: { type: string }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: string, format: date-time, nullable: true }
+    NotificationPage:
+      type: object
+      required: [items, unreadCount, nextBefore]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/InAppNotification" } }
+        unreadCount: { type: integer }
+        nextBefore: { type: integer, nullable: true }
+    BlockRecord:
+      type: object
+      required: [person, createdAt]
+      properties:
+        person: { $ref: "#/components/schemas/ChatPerson" }
+        createdAt: { type: string, format: date-time }
+    BlockPage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/BlockRecord" } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    CreateUserReportInput:
+      type: object
+      required: [username, reason]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 24 }
+        reason: { type: string, minLength: 10, maxLength: 1000 }
+        messageId: { type: integer, minimum: 1 }
+        blockUser: { type: boolean, default: false }
+    ReviewUserReportInput:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [resolved, dismissed] }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+    UserSafetyReport:
+      type: object
+      required: [id, target, reason, status, snapshot, snapshotAt, createdAt, decisionReason, decidedAt]
+      properties:
+        id: { type: integer }
+        target: { $ref: "#/components/schemas/ChatPerson" }
+        reason: { type: string }
+        status: { type: string, enum: [pending, resolved, dismissed] }
+        snapshot: { type: string, nullable: true }
+        snapshotAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        decisionReason: { type: string, nullable: true }
+        decidedAt: { type: string, format: date-time, nullable: true }
+    AdminSafetyReport:
+      allOf:
+        - { $ref: "#/components/schemas/UserSafetyReport" }
+        - type: object
+          required: [reporter, targetId, targetRole]
+          properties:
+            reporter: { $ref: "#/components/schemas/ChatPerson" }
+            targetId: { type: string }
+            targetRole: { type: string, enum: [student, admin, owner] }
+    MyReportPage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/UserSafetyReport" } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    AdminReportPage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/AdminSafetyReport" } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }

@@ -1,8 +1,8 @@
 import express, { type Express, type ErrorRequestHandler } from "express";
 import pinoHttp from "pino-http";
 import helmet from "helmet";
-import { rateLimit } from "express-rate-limit";
-import { clerkMiddleware } from "@clerk/express";
+import { ipKeyGenerator, rateLimit } from "express-rate-limit";
+import { clerkMiddleware, getAuth } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
 import { HttpError } from "./lib/errors";
@@ -40,7 +40,9 @@ app.use(express.urlencoded({ extended: false, limit: "128kb", inflate: false, pa
 app.use(clerkMiddleware((req) => ({
   publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
 })));
-app.use("/api", rateLimit({ windowMs: 60_000, limit: 240, standardHeaders: "draft-8", legacyHeaders: false }));
+app.use("/api", rateLimit({ windowMs: 60_000, limit: 240,
+  keyGenerator: req => getAuth(req).userId ? `user:${getAuth(req).userId}` : ipKeyGenerator(req.ip ?? "unknown"),
+  standardHeaders: "draft-8", legacyHeaders: false }));
 app.use("/api", (req, res, next) => {
   res.set("Cache-Control", "no-store");
   if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
@@ -67,7 +69,10 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err?.type === "entity.too.large") { res.status(413).json({ error: "Request too large." }); return; }
   if (err?.type === "encoding.unsupported") { res.status(415).json({ error: "Compressed request bodies are not supported." }); return; }
   if (err?.type === "entity.parse.failed") { res.status(400).json({ error: "Invalid JSON request body." }); return; }
-  req.log.error({ err }, "Request failed");
+  if (/^\/api\/(conversations|safety|notifications|admin\/user-reports)(\/|$)/.test(req.path)) {
+    // Drizzle errors may contain query parameters: never log chat/report contents.
+    req.log.error({ code: typeof code === "string" ? code : "UNKNOWN" }, "Private request failed");
+  } else req.log.error({ err }, "Request failed");
   res.status(500).json({ error: "Something went wrong. Your request could not be completed. Please try again." });
 };
 app.use(errorHandler);

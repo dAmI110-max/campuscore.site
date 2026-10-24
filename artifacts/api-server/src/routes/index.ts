@@ -6,6 +6,9 @@ import listingsRouter from "./listings";
 import adminRouter from "./admin";
 import storageRouter from "./storage";
 import accessRouter from "./staff-access";
+import messagingRouter from "./messaging";
+import notificationsRouter from "./notifications";
+import safetyRouter from "./safety";
 
 const router: IRouter = Router();
 
@@ -16,5 +19,8 @@ router.use(listingsRouter);
 router.use(adminRouter);
 router.use(accessRouter);
 router.use(storageRouter);
+router.use(messagingRouter);
+router.use(notificationsRouter);
+router.use(safetyRouter);
 
 export default router;

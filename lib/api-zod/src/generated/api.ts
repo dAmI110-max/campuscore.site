@@ -8,6 +8,389 @@
 import * as zod from 'zod';
 
 
+export const searchPeopleQueryQMax = 100;
+
+export const searchPeopleQueryPageDefault = 1;
+
+
+
+export const SearchPeopleQueryParams = zod.object({
+  "q": zod.coerce.string().max(searchPeopleQueryQMax).optional(),
+  "universityId": zod.coerce.number().int().optional(),
+  "page": zod.coerce.number().int().min(1).default(searchPeopleQueryPageDefault)
+})
+
+export const SearchPeopleResponse = zod.object({
+  "items": zod.array(zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+})),
+  "total": zod.int(),
+  "page": zod.int(),
+  "pageSize": zod.int()
+})
+
+
+export const GetSocialSummaryResponse = zod.object({
+  "unreadMessages": zod.int(),
+  "unreadNotifications": zod.int()
+})
+
+
+export const listConversationsQueryPageDefault = 1;
+
+
+
+export const ListConversationsQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listConversationsQueryPageDefault)
+})
+
+export const ListConversationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.int(),
+  "peer": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "unreadCount": zod.int(),
+  "canMessage": zod.boolean(),
+  "blockedByMe": zod.boolean(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.int(),
+  "body": zod.string(),
+  "isMine": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}),zod.null()])
+})),
+  "total": zod.int(),
+  "page": zod.int(),
+  "pageSize": zod.int()
+})
+
+
+export const startConversationBodyUsernameMin = 3;
+export const startConversationBodyUsernameMax = 24;
+
+
+
+export const StartConversationBody = zod.object({
+  "username": zod.string().min(startConversationBodyUsernameMin).max(startConversationBodyUsernameMax)
+})
+
+export const StartConversationResponse = zod.object({
+  "id": zod.int(),
+  "peer": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "unreadCount": zod.int(),
+  "canMessage": zod.boolean(),
+  "blockedByMe": zod.boolean(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.int(),
+  "body": zod.string(),
+  "isMine": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}),zod.null()])
+})
+
+
+
+
+
+export const GetConversationParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const GetConversationQueryParams = zod.object({
+  "before": zod.coerce.number().int().optional()
+})
+
+export const GetConversationResponse = zod.object({
+  "conversation": zod.object({
+  "id": zod.int(),
+  "peer": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "unreadCount": zod.int(),
+  "canMessage": zod.boolean(),
+  "blockedByMe": zod.boolean(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.int(),
+  "body": zod.string(),
+  "isMine": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}),zod.null()])
+}),
+  "messages": zod.array(zod.object({
+  "id": zod.int(),
+  "body": zod.string(),
+  "isMine": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})),
+  "nextBefore": zod.int().nullable()
+})
+
+
+
+
+
+export const SendMessageParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const sendMessageBodyBodyMax = 4000;
+
+
+
+export const SendMessageBody = zod.object({
+  "body": zod.string().min(1).max(sendMessageBodyBodyMax),
+  "clientMessageId": zod.uuid()
+})
+
+export const SendMessageResponse = zod.object({
+  "id": zod.int(),
+  "body": zod.string(),
+  "isMine": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+
+
+
+export const ReadConversationParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+
+
+
+export const ReadConversationBody = zod.object({
+  "throughMessageId": zod.int().min(1)
+})
+
+export const ReadConversationResponse = zod.object({
+  "message": zod.string()
+})
+
+
+export const ListNotificationsQueryParams = zod.object({
+  "before": zod.coerce.number().int().optional(),
+  "unreadOnly": zod.coerce.boolean().optional()
+})
+
+export const ListNotificationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.int(),
+  "kind": zod.string(),
+  "title": zod.string(),
+  "href": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "readAt": zod.coerce.date().nullable()
+})),
+  "unreadCount": zod.int(),
+  "nextBefore": zod.int().nullable()
+})
+
+
+
+
+
+export const ReadNotificationParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const ReadNotificationResponse = zod.object({
+  "message": zod.string()
+})
+
+
+
+
+
+export const ReadAllNotificationsBody = zod.object({
+  "throughId": zod.int().min(1)
+})
+
+export const ReadAllNotificationsResponse = zod.object({
+  "message": zod.string()
+})
+
+
+export const listBlocksQueryPageDefault = 1;
+
+
+
+export const ListBlocksQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listBlocksQueryPageDefault)
+})
+
+export const ListBlocksResponse = zod.object({
+  "items": zod.array(zod.object({
+  "person": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "createdAt": zod.coerce.date()
+})),
+  "total": zod.int(),
+  "page": zod.int(),
+  "pageSize": zod.int()
+})
+
+
+export const BlockUserParams = zod.object({
+  "username": zod.coerce.string()
+})
+
+export const BlockUserResponse = zod.object({
+  "message": zod.string()
+})
+
+
+export const UnblockUserParams = zod.object({
+  "username": zod.coerce.string()
+})
+
+export const UnblockUserResponse = zod.object({
+  "message": zod.string()
+})
+
+
+export const listMyUserReportsQueryPageDefault = 1;
+
+
+
+export const ListMyUserReportsQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listMyUserReportsQueryPageDefault)
+})
+
+export const ListMyUserReportsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.int(),
+  "target": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'resolved', 'dismissed']),
+  "snapshot": zod.string().nullable(),
+  "snapshotAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "decisionReason": zod.string().nullable(),
+  "decidedAt": zod.coerce.date().nullable()
+})),
+  "total": zod.int(),
+  "page": zod.int(),
+  "pageSize": zod.int()
+})
+
+
+export const createUserReportBodyUsernameMin = 3;
+export const createUserReportBodyUsernameMax = 24;
+
+export const createUserReportBodyReasonMin = 10;
+export const createUserReportBodyReasonMax = 1000;
+
+
+export const createUserReportBodyBlockUserDefault = false;
+
+export const CreateUserReportBody = zod.object({
+  "username": zod.string().min(createUserReportBodyUsernameMin).max(createUserReportBodyUsernameMax),
+  "reason": zod.string().min(createUserReportBodyReasonMin).max(createUserReportBodyReasonMax),
+  "messageId": zod.int().min(1).optional(),
+  "blockUser": zod.boolean().default(createUserReportBodyBlockUserDefault)
+})
+
+export const CreateUserReportResponse = zod.object({
+  "id": zod.int(),
+  "target": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'resolved', 'dismissed']),
+  "snapshot": zod.string().nullable(),
+  "snapshotAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "decisionReason": zod.string().nullable(),
+  "decidedAt": zod.coerce.date().nullable()
+})
+
+
+export const listUserReportsQueryPageDefault = 1;
+
+
+
+export const ListUserReportsQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listUserReportsQueryPageDefault),
+  "status": zod.enum(['pending', 'resolved', 'dismissed', 'all']).optional()
+})
+
+export const ListUserReportsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.int(),
+  "target": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'resolved', 'dismissed']),
+  "snapshot": zod.string().nullable(),
+  "snapshotAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "decisionReason": zod.string().nullable(),
+  "decidedAt": zod.coerce.date().nullable()
+}).and(zod.object({
+  "reporter": zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarPath": zod.string().nullable()
+}),
+  "targetId": zod.string(),
+  "targetRole": zod.enum(['student', 'admin', 'owner'])
+}))),
+  "total": zod.int(),
+  "page": zod.int(),
+  "pageSize": zod.int()
+})
+
+
+
+
+
+export const ReviewUserReportParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const reviewUserReportBodyReasonMin = 5;
+export const reviewUserReportBodyReasonMax = 1000;
+
+
+
+export const ReviewUserReportBody = zod.object({
+  "status": zod.enum(['resolved', 'dismissed']),
+  "reason": zod.string().min(reviewUserReportBodyReasonMin).max(reviewUserReportBodyReasonMax)
+})
+
+export const ReviewUserReportResponse = zod.object({
+  "message": zod.string()
+})
+
+
 export const HealthCheckResponse = zod.object({
   "status": zod.string()
 })
@@ -15,15 +398,15 @@ export const HealthCheckResponse = zod.object({
 
 export const GetSummaryResponse = zod.object({
   "counts": zod.object({
-  "marketplace": zod.number().int(),
-  "accommodation": zod.number().int(),
-  "services": zod.number().int(),
-  "opportunities": zod.number().int(),
-  "study": zod.number().int(),
-  "communities": zod.number().int(),
-  "events": zod.number().int()
+  "marketplace": zod.int(),
+  "accommodation": zod.int(),
+  "services": zod.int(),
+  "opportunities": zod.int(),
+  "study": zod.int(),
+  "communities": zod.int(),
+  "events": zod.int()
 }),
-  "universities": zod.number().int(),
+  "universities": zod.int(),
   "paymentsEnabled": zod.boolean(),
   "messagingEnabled": zod.boolean(),
   "aiEnabled": zod.boolean()
@@ -37,10 +420,10 @@ export const GetDirectoryQueryParams = zod.object({
 })
 
 export const GetDirectoryResponseItem = zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "kind": zod.enum(['country', 'university', 'faculty', 'department']),
   "name": zod.string(),
-  "parentId": zod.number().int().nullable(),
+  "parentId": zod.int().nullable(),
   "sourceUrl": zod.string(),
   "active": zod.boolean()
 })
@@ -59,7 +442,7 @@ export const requestInstitutionBodyNotesMax = 1000;
 export const RequestInstitutionBody = zod.object({
   "kind": zod.enum(['country', 'university', 'faculty', 'department']),
   "name": zod.string().min(requestInstitutionBodyNameMin).max(requestInstitutionBodyNameMax),
-  "parentId": zod.number().int().nullish(),
+  "parentId": zod.int().nullish(),
   "sourceUrl": zod.string().max(requestInstitutionBodySourceUrlMax).optional(),
   "notes": zod.string().max(requestInstitutionBodyNotesMax).optional()
 })
@@ -84,10 +467,10 @@ export const GetProfileResponse = zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
   "username": zod.string().nullable(),
-  "countryId": zod.number().int().nullable(),
-  "universityId": zod.number().int().nullable(),
-  "facultyId": zod.number().int().nullable(),
-  "departmentId": zod.number().int().nullable(),
+  "countryId": zod.int().nullable(),
+  "universityId": zod.int().nullable(),
+  "facultyId": zod.int().nullable(),
+  "departmentId": zod.int().nullable(),
   "bio": zod.string(),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
@@ -110,10 +493,10 @@ export const saveProfileBodyBioMax = 500;
 export const SaveProfileBody = zod.object({
   "displayName": zod.string().min(saveProfileBodyDisplayNameMin).max(saveProfileBodyDisplayNameMax),
   "username": zod.string().min(saveProfileBodyUsernameMin).max(saveProfileBodyUsernameMax),
-  "countryId": zod.number().int(),
-  "universityId": zod.number().int(),
-  "facultyId": zod.number().int().nullable(),
-  "departmentId": zod.number().int().nullable(),
+  "countryId": zod.int(),
+  "universityId": zod.int(),
+  "facultyId": zod.int().nullable(),
+  "departmentId": zod.int().nullable(),
   "bio": zod.string().max(saveProfileBodyBioMax),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable()
@@ -123,10 +506,10 @@ export const SaveProfileResponse = zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
   "username": zod.string().nullable(),
-  "countryId": zod.number().int().nullable(),
-  "universityId": zod.number().int().nullable(),
-  "facultyId": zod.number().int().nullable(),
-  "departmentId": zod.number().int().nullable(),
+  "countryId": zod.int().nullable(),
+  "universityId": zod.int().nullable(),
+  "facultyId": zod.int().nullable(),
+  "departmentId": zod.int().nullable(),
   "bio": zod.string(),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
@@ -150,8 +533,10 @@ export const GetPublicProfileResponse = zod.object({
 
 
 export const listListingsQueryMinPriceMin = 0;
+export const listListingsQueryMinPriceMax = 1000000000;
 
 export const listListingsQueryMaxPriceMin = 0;
+export const listListingsQueryMaxPriceMax = 1000000000;
 
 export const listListingsQueryPageDefault = 1;
 
@@ -162,8 +547,9 @@ export const ListListingsQueryParams = zod.object({
   "q": zod.coerce.string().optional(),
   "universityId": zod.coerce.number().int().optional(),
   "category": zod.coerce.string().optional(),
-  "minPrice": zod.coerce.number().min(listListingsQueryMinPriceMin).optional(),
-  "maxPrice": zod.coerce.number().min(listListingsQueryMaxPriceMin).optional(),
+  "condition": zod.enum(['New', 'Like new', 'Good', 'Fair', 'For parts']).optional(),
+  "minPrice": zod.coerce.number().min(listListingsQueryMinPriceMin).max(listListingsQueryMinPriceMax).optional(),
+  "maxPrice": zod.coerce.number().min(listListingsQueryMaxPriceMin).max(listListingsQueryMaxPriceMax).optional(),
   "location": zod.coerce.string().optional(),
   "sort": zod.enum(['newest', 'price-low', 'price-high']).optional(),
   "mine": zod.coerce.boolean().optional(),
@@ -204,7 +590,7 @@ export const ListListingsResponse = zod.object({
   "category": zod.string().min(listListingsResponseItemsItemOneCategoryMin).max(listListingsResponseItemsItemOneCategoryMax),
   "price": zod.number().min(listListingsResponseItemsItemOnePriceMin).max(listListingsResponseItemsItemOnePriceMax).nullable(),
   "location": zod.string().max(listListingsResponseItemsItemOneLocationMax),
-  "universityId": zod.number().int(),
+  "universityId": zod.int(),
   "condition": zod.string().max(listListingsResponseItemsItemOneConditionMax),
   "status": zod.enum(['draft', 'published', 'unavailable']),
   "images": zod.array(zod.string()).max(listListingsResponseItemsItemOneImagesMax),
@@ -212,7 +598,7 @@ export const ListListingsResponse = zod.object({
   "closesAt": zod.string().regex(listListingsResponseItemsItemOneClosesAtRegExp).nullable(),
   "resourceUrl": zod.string().max(listListingsResponseItemsItemOneResourceUrlMax)
 }).and(zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "ownerId": zod.string(),
   "sellerName": zod.string(),
   "sellerUsername": zod.string(),
@@ -221,9 +607,9 @@ export const ListListingsResponse = zod.object({
   "saved": zod.boolean(),
   "createdAt": zod.string()
 }))),
-  "total": zod.number().int(),
-  "page": zod.number().int(),
-  "pageSize": zod.number().int()
+  "total": zod.int(),
+  "page": zod.int(),
+  "pageSize": zod.int()
 })
 
 
@@ -259,7 +645,7 @@ export const CreateListingBody = zod.object({
   "category": zod.string().min(createListingBodyCategoryMin).max(createListingBodyCategoryMax),
   "price": zod.number().min(createListingBodyPriceMin).max(createListingBodyPriceMax).nullable(),
   "location": zod.string().max(createListingBodyLocationMax),
-  "universityId": zod.number().int(),
+  "universityId": zod.int(),
   "condition": zod.string().max(createListingBodyConditionMax),
   "status": zod.enum(['draft', 'published', 'unavailable']),
   "images": zod.array(zod.string()).max(createListingBodyImagesMax),
@@ -300,7 +686,7 @@ export const CreateListingResponse = zod.object({
   "category": zod.string().min(createListingResponseOneCategoryMin).max(createListingResponseOneCategoryMax),
   "price": zod.number().min(createListingResponseOnePriceMin).max(createListingResponseOnePriceMax).nullable(),
   "location": zod.string().max(createListingResponseOneLocationMax),
-  "universityId": zod.number().int(),
+  "universityId": zod.int(),
   "condition": zod.string().max(createListingResponseOneConditionMax),
   "status": zod.enum(['draft', 'published', 'unavailable']),
   "images": zod.array(zod.string()).max(createListingResponseOneImagesMax),
@@ -308,7 +694,7 @@ export const CreateListingResponse = zod.object({
   "closesAt": zod.string().regex(createListingResponseOneClosesAtRegExp).nullable(),
   "resourceUrl": zod.string().max(createListingResponseOneResourceUrlMax)
 }).and(zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "ownerId": zod.string(),
   "sellerName": zod.string(),
   "sellerUsername": zod.string(),
@@ -358,7 +744,7 @@ export const GetListingResponse = zod.object({
   "category": zod.string().min(getListingResponseOneCategoryMin).max(getListingResponseOneCategoryMax),
   "price": zod.number().min(getListingResponseOnePriceMin).max(getListingResponseOnePriceMax).nullable(),
   "location": zod.string().max(getListingResponseOneLocationMax),
-  "universityId": zod.number().int(),
+  "universityId": zod.int(),
   "condition": zod.string().max(getListingResponseOneConditionMax),
   "status": zod.enum(['draft', 'published', 'unavailable']),
   "images": zod.array(zod.string()).max(getListingResponseOneImagesMax),
@@ -366,7 +752,7 @@ export const GetListingResponse = zod.object({
   "closesAt": zod.string().regex(getListingResponseOneClosesAtRegExp).nullable(),
   "resourceUrl": zod.string().max(getListingResponseOneResourceUrlMax)
 }).and(zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "ownerId": zod.string(),
   "sellerName": zod.string(),
   "sellerUsername": zod.string(),
@@ -416,7 +802,7 @@ export const UpdateListingBody = zod.object({
   "category": zod.string().min(updateListingBodyCategoryMin).max(updateListingBodyCategoryMax),
   "price": zod.number().min(updateListingBodyPriceMin).max(updateListingBodyPriceMax).nullable(),
   "location": zod.string().max(updateListingBodyLocationMax),
-  "universityId": zod.number().int(),
+  "universityId": zod.int(),
   "condition": zod.string().max(updateListingBodyConditionMax),
   "status": zod.enum(['draft', 'published', 'unavailable']),
   "images": zod.array(zod.string()).max(updateListingBodyImagesMax),
@@ -457,7 +843,7 @@ export const UpdateListingResponse = zod.object({
   "category": zod.string().min(updateListingResponseOneCategoryMin).max(updateListingResponseOneCategoryMax),
   "price": zod.number().min(updateListingResponseOnePriceMin).max(updateListingResponseOnePriceMax).nullable(),
   "location": zod.string().max(updateListingResponseOneLocationMax),
-  "universityId": zod.number().int(),
+  "universityId": zod.int(),
   "condition": zod.string().max(updateListingResponseOneConditionMax),
   "status": zod.enum(['draft', 'published', 'unavailable']),
   "images": zod.array(zod.string()).max(updateListingResponseOneImagesMax),
@@ -465,7 +851,7 @@ export const UpdateListingResponse = zod.object({
   "closesAt": zod.string().regex(updateListingResponseOneClosesAtRegExp).nullable(),
   "resourceUrl": zod.string().max(updateListingResponseOneResourceUrlMax)
 }).and(zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "ownerId": zod.string(),
   "sellerName": zod.string(),
   "sellerUsername": zod.string(),
@@ -504,7 +890,7 @@ export const createReportBodyReasonMax = 2000;
 
 
 export const CreateReportBody = zod.object({
-  "listingId": zod.number().int(),
+  "listingId": zod.int(),
   "reason": zod.string().min(createReportBodyReasonMin).max(createReportBodyReasonMax)
 })
 
@@ -521,7 +907,7 @@ export const requestUploadUrlBodySizeMax = 5242880;
 
 export const RequestUploadUrlBody = zod.object({
   "name": zod.string().max(requestUploadUrlBodyNameMax),
-  "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
+  "size": zod.int().min(1).max(requestUploadUrlBodySizeMax),
   "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp'])
 })
 
@@ -561,10 +947,10 @@ export const GetStaffAccessResponse = zod.object({
   "suspended": zod.boolean(),
   "createdAt": zod.string()
 })),
-  "total": zod.number().int(),
-  "page": zod.number().int(),
+  "total": zod.int(),
+  "page": zod.int(),
   "requests": zod.array(zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "requesterId": zod.string(),
   "requesterName": zod.string(),
   "targetId": zod.string(),
@@ -673,10 +1059,10 @@ export const GetAdminOverviewResponse = zod.object({
   "createdAt": zod.string()
 })),
   "directory": zod.array(zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "kind": zod.enum(['country', 'university', 'faculty', 'department']),
   "name": zod.string(),
-  "parentId": zod.number().int().nullable(),
+  "parentId": zod.int().nullable(),
   "sourceUrl": zod.string(),
   "active": zod.boolean()
 }))
@@ -694,19 +1080,19 @@ export const manageDirectoryBodyNameMax = 200;
 
 
 export const ManageDirectoryBody = zod.object({
-  "id": zod.number().int().optional(),
+  "id": zod.int().optional(),
   "kind": zod.enum(['country', 'university', 'faculty', 'department']),
   "name": zod.string().min(manageDirectoryBodyNameMin).max(manageDirectoryBodyNameMax),
-  "parentId": zod.number().int().nullish(),
-  "sourceUrl": zod.string().url(),
+  "parentId": zod.int().nullish(),
+  "sourceUrl": zod.url(),
   "active": zod.boolean()
 })
 
 export const ManageDirectoryResponse = zod.object({
-  "id": zod.number().int(),
+  "id": zod.int(),
   "kind": zod.enum(['country', 'university', 'faculty', 'department']),
   "name": zod.string(),
-  "parentId": zod.number().int().nullable(),
+  "parentId": zod.int().nullable(),
   "sourceUrl": zod.string(),
   "active": zod.boolean()
 })

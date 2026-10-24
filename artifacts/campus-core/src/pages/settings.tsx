@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useClerk, useUser, UserProfile } from "@clerk/react";
-import { Monitor, Moon, Sun, LogOut, KeyRound } from "lucide-react";
+import { Link } from "wouter";
+import { Monitor, Moon, Sun, LogOut, KeyRound, MessageCircle, Bell, ShieldCheck, Users } from "lucide-react";
 import { useGetSummary, getGetSummaryQueryKey, useHealthCheck, getHealthCheckQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -42,11 +43,22 @@ export default function Settings() {
         </div>
       </section>
       <section className="rounded-2xl border bg-card p-5 sm:p-6">
+        <h2 className="font-display text-lg font-semibold">Messages and safety</h2>
+        <p className="text-sm text-muted-foreground">Private conversations, activity alerts, and the people you have blocked or reported.</p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {[{ href: "/messages", icon: MessageCircle, label: "Messages" }, { href: "/notifications", icon: Bell, label: "Notifications" }, { href: "/safety", icon: ShieldCheck, label: "Blocks and reports" }, { href: "/people", icon: Users, label: "Find people" }].map((l) => (
+            <Link key={l.href} href={l.href} className="flex items-center gap-3 rounded-xl border p-3.5 text-sm font-medium transition-colors hover:border-primary/50 hover:bg-muted/50" data-testid={`link-settings-${l.href.slice(1)}`}>
+              <l.icon className="h-4 w-4 text-primary" />{l.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+      <section className="rounded-2xl border bg-card p-5 sm:p-6">
         <h2 className="font-display text-lg font-semibold">Feature status</h2>
         <p className="text-sm text-muted-foreground">What is switched on right now. We would rather tell you than pretend.</p>
         <ul className="mt-4 divide-y text-sm">
           <Row label="Service" value={health.isLoading ? "Checking" : health.data?.status === "ok" ? "Online" : "Unreachable"} on={health.data?.status === "ok"} />
-          <Row label="In-app messaging" value={summary.data ? (summary.data.messagingEnabled ? "On" : "Not available yet") : "Unknown"} on={!!summary.data?.messagingEnabled} />
+          <Row label="In-app messaging" value="On, private between students" on />
           <Row label="Payments" value={summary.data ? (summary.data.paymentsEnabled ? "On" : "Not available. Arrange payment directly.") : "Unknown"} on={!!summary.data?.paymentsEnabled} />
           <Row label="AI assistance" value={summary.data ? (summary.data.aiEnabled ? "On" : "Off") : "Unknown"} on={!!summary.data?.aiEnabled} />
         </ul>

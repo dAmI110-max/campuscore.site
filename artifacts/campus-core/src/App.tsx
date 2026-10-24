@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { ClerkProvider, Show, useClerk } from "@clerk/react";
+import { useEffect, useRef } from "react";
+import { ClerkProvider, Show, useClerk, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +19,11 @@ import ListingForm from "@/pages/listing-form";
 import Collection from "@/pages/collection";
 import ProfilePage from "@/pages/profile";
 import People from "@/pages/people";
+import PeopleSearch from "@/pages/people-search";
+import Messages from "@/pages/messages";
+import Notifications from "@/pages/notifications";
+import Safety from "@/pages/safety";
+import AdminSafety from "@/pages/admin-safety";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
 import AdminAccess from "@/pages/admin-access";
@@ -121,8 +126,12 @@ function HomeRedirect() {
   );
 }
 
-const auth = (node: ReactNode) => () => <RequireAuth>{node}</RequireAuth>;
-const full = (node: ReactNode) => () => <RequireProfile>{node}</RequireProfile>;
+function IdentityScopedRouter() {
+  const { userId } = useAuth();
+  // Clearing query caches does not clear local history, composer text or dialogs.
+  // Switching active Clerk accounts must remount every user-scoped screen too.
+  return <Router key={userId ?? "signed-out"} />;
+}
 
 function Router() {
   const [location] = useLocation();
@@ -136,16 +145,22 @@ function Router() {
           <Route path="/explore" component={Explore} />
           {KINDS.map((k) => <Route key={k.kind} path={k.path}>{() => <KindPage kind={k.kind} />}</Route>)}
           <Route path="/listing/:id" component={ListingDetail} />
-          <Route path="/create" component={full(<ListingForm />)} />
-          <Route path="/edit/:id" component={full(<ListingForm />)} />
-          <Route path="/saved" component={auth(<Collection mode="saved" />)} />
-          <Route path="/my-listings" component={auth(<Collection mode="mine" />)} />
-          <Route path="/profile" component={auth(<ProfilePage />)} />
-          <Route path="/onboarding" component={auth(<ProfilePage onboarding />)} />
+          <Route path="/create"><RequireProfile><ListingForm /></RequireProfile></Route>
+          <Route path="/edit/:id"><RequireProfile><ListingForm /></RequireProfile></Route>
+          <Route path="/saved"><RequireAuth><Collection mode="saved" /></RequireAuth></Route>
+          <Route path="/my-listings"><RequireAuth><Collection mode="mine" /></RequireAuth></Route>
+          <Route path="/profile"><RequireAuth><ProfilePage /></RequireAuth></Route>
+          <Route path="/onboarding"><RequireAuth><ProfilePage onboarding /></RequireAuth></Route>
+          <Route path="/people"><RequireAuth><PeopleSearch /></RequireAuth></Route>
           <Route path="/people/:username" component={People} />
-          <Route path="/settings" component={auth(<Settings />)} />
-          <Route path="/admin" component={auth(<Admin />)} />
-          <Route path="/admin/access" component={auth(<AdminAccess />)} />
+          <Route path="/messages"><RequireAuth><Messages /></RequireAuth></Route>
+          <Route path="/messages/:id"><RequireAuth><Messages /></RequireAuth></Route>
+          <Route path="/notifications"><RequireAuth><Notifications /></RequireAuth></Route>
+          <Route path="/safety"><RequireAuth><Safety /></RequireAuth></Route>
+          <Route path="/settings"><RequireAuth><Settings /></RequireAuth></Route>
+          <Route path="/admin"><RequireAuth><Admin /></RequireAuth></Route>
+          <Route path="/admin/access"><RequireAuth><AdminAccess /></RequireAuth></Route>
+          <Route path="/admin/safety"><RequireAuth><AdminSafety /></RequireAuth></Route>
           <Route component={NotFound} />
         </Switch>
       </ErrorBoundary>
@@ -172,7 +187,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
-          <Router />
+          <IdentityScopedRouter />
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>

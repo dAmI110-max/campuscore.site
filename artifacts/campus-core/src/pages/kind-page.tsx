@@ -1,4 +1,4 @@
-import { Link, useSearch } from "wouter";
+import { Link } from "wouter";
 import { Plus, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ListingBrowser } from "@/components/listing-browser";
@@ -8,7 +8,6 @@ import { KIND_MAP, type Kind } from "@/lib/kinds";
 export default function KindPage({ kind }: { kind: Kind }) {
   const meta = KIND_MAP[kind];
   const me = useMe();
-  const initialQ = new URLSearchParams(useSearch()).get("q") ?? "";
   return (
     <div>
       <section className="mb-8 grid items-center gap-6 rounded-3xl border bg-card p-6 sm:p-8 md:grid-cols-[1fr_auto]">
@@ -23,7 +22,7 @@ export default function KindPage({ kind }: { kind: Kind }) {
         </div>
         <img src={meta.art} alt="" className="hidden h-44 w-44 rounded-2xl object-cover md:block" />
       </section>
-      <ListingBrowser key={kind + initialQ} initialQ={initialQ} meta={meta} signedIn={me.signedIn} />
+      <ListingBrowser key={kind} meta={meta} signedIn={me.signedIn} />
     </div>
   );
 }
