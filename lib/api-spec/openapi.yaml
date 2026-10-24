@@ -1,36 +1,450 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Campus Core API
 servers:
   - url: /api
-    description: Base API path
-tags:
-  - name: health
-    description: Health operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
-      tags: [health]
-      summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+  /summary:
+    get:
+      operationId: getSummary
+      responses:
+        "200":
+          description: Genuine published record counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Summary" }
+  /directory:
+    get:
+      operationId: getDirectory
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [country, university, faculty, department] } }
+        - { name: parentId, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Active sourced directory records, not a complete directory
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/DirectoryEntry" } }
+  /directory/requests:
+    post:
+      operationId: requestInstitution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstitutionRequestInput" }
+      responses:
+        "201":
+          description: Request queued for verification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /usernames/availability:
+    get:
+      operationId: checkUsername
+      parameters:
+        - { name: username, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Availability, final uniqueness enforced on save
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UsernameAvailability" }
+  /profile:
+    get:
+      operationId: getProfile
+      responses:
+        "200":
+          description: Current account profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+    put:
+      operationId: saveProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfileInput" }
+      responses:
+        "200":
+          description: Persisted profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+  /profiles/{username}:
+    get:
+      operationId: getPublicProfile
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Public fields only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicProfile" }
+  /listings:
+    get:
+      operationId: listListings
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [marketplace, accommodation, services, opportunities, study, communities, events] } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: universityId, in: query, schema: { type: integer } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: minPrice, in: query, schema: { type: number, minimum: 0 } }
+        - { name: maxPrice, in: query, schema: { type: number, minimum: 0 } }
+        - { name: location, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [newest, price-low, price-high] } }
+        - { name: mine, in: query, schema: { type: boolean } }
+        - { name: saved, in: query, schema: { type: boolean } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        "200":
+          description: Paginated listings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListingPage" }
+    post:
+      operationId: createListing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListingInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Listing" }
+  /listings/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      operationId: getListing
+      responses:
+        "200":
+          description: Listing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Listing" }
+    put:
+      operationId: updateListing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListingInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Listing" }
+    delete:
+      operationId: deleteListing
+      responses:
+        "204": { description: Removed }
+  /listings/{id}/save:
+    post:
+      operationId: toggleSavedListing
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Saved status
+          content:
+            application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: object
+                required: [saved]
+                properties: { saved: { type: boolean } }
+  /reports:
+    post:
+      operationId: createReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportInput" }
+      responses:
+        "201":
+          description: Report received
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadInput" }
+      responses:
+        "200":
+          description: Upload directly using PUT then finalize
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadTicket" }
+  /storage/uploads/complete:
+    post:
+      operationId: completeUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadCompletionInput" }
+      responses:
+        "200":
+          description: File validated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadResult" }
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      responses:
+        "200":
+          description: Protected moderation queue and activity
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOverview" }
+  /admin/directory:
+    post:
+      operationId: manageDirectory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectoryInput" }
+      responses:
+        "200":
+          description: Added or updated source-verified reference record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryEntry" }
+  /admin/actions:
+    post:
+      operationId: moderate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ModerationInput" }
+      responses:
+        "200":
+          description: Audited action
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
+      properties: { status: { type: string } }
+    Message:
+      type: object
+      required: [message]
+      properties: { message: { type: string } }
+    Summary:
+      type: object
+      required: [counts, universities, paymentsEnabled, messagingEnabled, aiEnabled]
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        counts:
+          type: object
+          required: [marketplace, accommodation, services, opportunities, study, communities, events]
+          properties:
+            marketplace: { type: integer }
+            accommodation: { type: integer }
+            services: { type: integer }
+            opportunities: { type: integer }
+            study: { type: integer }
+            communities: { type: integer }
+            events: { type: integer }
+        universities: { type: integer }
+        paymentsEnabled: { type: boolean }
+        messagingEnabled: { type: boolean }
+        aiEnabled: { type: boolean }
+    DirectoryEntry:
+      type: object
+      required: [id, kind, name, parentId, sourceUrl, active]
+      properties:
+        id: { type: integer }
+        kind: { type: string, enum: [country, university, faculty, department] }
+        name: { type: string }
+        parentId: { type: [integer, "null"] }
+        sourceUrl: { type: string }
+        active: { type: boolean }
+    DirectoryInput:
+      type: object
+      required: [kind, name, sourceUrl, active]
+      properties:
+        id: { type: integer }
+        kind: { type: string, enum: [country, university, faculty, department] }
+        name: { type: string, minLength: 2, maxLength: 200 }
+        parentId: { type: [integer, "null"] }
+        sourceUrl: { type: string, format: uri }
+        active: { type: boolean }
+    InstitutionRequestInput:
+      type: object
+      required: [kind, name]
+      properties:
+        kind: { type: string, enum: [country, university, faculty, department] }
+        name: { type: string, minLength: 2, maxLength: 200 }
+        parentId: { type: [integer, "null"] }
+        sourceUrl: { type: string, maxLength: 500 }
+        notes: { type: string, maxLength: 1000 }
+    UsernameAvailability:
+      type: object
+      required: [username, available, reason]
+      properties:
+        username: { type: string }
+        available: { type: boolean }
+        reason: { type: [string, "null"] }
+    ProfileInput:
+      type: object
+      required: [displayName, username, countryId, universityId, facultyId, departmentId, bio, showAcademics, avatarPath]
+      properties:
+        displayName: { type: string, minLength: 2, maxLength: 80 }
+        username: { type: string, minLength: 3, maxLength: 24 }
+        countryId: { type: integer }
+        universityId: { type: integer }
+        facultyId: { type: [integer, "null"] }
+        departmentId: { type: [integer, "null"] }
+        bio: { type: string, maxLength: 500 }
+        showAcademics: { type: boolean }
+        avatarPath: { type: [string, "null"] }
+    Profile:
+      type: object
+      required: [id, displayName, username, countryId, universityId, facultyId, departmentId, bio, showAcademics, avatarPath, role, suspended, complete]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        username: { type: [string, "null"] }
+        countryId: { type: [integer, "null"] }
+        universityId: { type: [integer, "null"] }
+        facultyId: { type: [integer, "null"] }
+        departmentId: { type: [integer, "null"] }
+        bio: { type: string }
+        showAcademics: { type: boolean }
+        avatarPath: { type: [string, "null"] }
+        role: { type: string, enum: [student, admin] }
+        suspended: { type: boolean }
+        complete: { type: boolean }
+    PublicProfile:
+      type: object
+      required: [displayName, username, bio, avatarPath, universityName]
+      properties:
+        displayName: { type: string }
+        username: { type: string }
+        bio: { type: string }
+        avatarPath: { type: [string, "null"] }
+        universityName: { type: [string, "null"] }
+    ListingInput:
+      type: object
+      required: [kind, title, description, category, price, location, universityId, condition, status, images, contact, closesAt, resourceUrl]
+      properties:
+        kind: { type: string, enum: [marketplace, accommodation, services, opportunities, study, communities, events] }
+        title: { type: string, minLength: 3, maxLength: 150 }
+        description: { type: string, minLength: 20, maxLength: 10000 }
+        category: { type: string, minLength: 2, maxLength: 80 }
+        price: { type: [number, "null"], minimum: 0, maximum: 1000000000 }
+        location: { type: string, maxLength: 200 }
+        universityId: { type: integer }
+        condition: { type: string, maxLength: 40 }
+        status: { type: string, enum: [draft, published, unavailable] }
+        images: { type: array, maxItems: 6, items: { type: string } }
+        contact: { type: string, maxLength: 250 }
+        closesAt: { type: [string, "null"], pattern: '^\d{4}-\d{2}-\d{2}$' }
+        resourceUrl: { type: string, maxLength: 1000 }
+    Listing:
+      allOf:
+        - { $ref: "#/components/schemas/ListingInput" }
+        - type: object
+          required: [id, ownerId, sellerName, sellerUsername, universityName, verified, saved, createdAt]
+          properties:
+            id: { type: integer }
+            ownerId: { type: string }
+            sellerName: { type: string }
+            sellerUsername: { type: string }
+            universityName: { type: string }
+            verified: { type: boolean }
+            saved: { type: boolean }
+            createdAt: { type: string }
+    ListingPage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/Listing" } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    ReportInput:
+      type: object
+      required: [listingId, reason]
+      properties:
+        listingId: { type: integer }
+        reason: { type: string, minLength: 10, maxLength: 2000 }
+    UploadInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, maxLength: 200 }
+        size: { type: integer, minimum: 1, maximum: 5242880 }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+    UploadTicket:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string }
+        objectPath: { type: string }
+    UploadCompletionInput:
+      type: object
+      required: [objectPath]
+      properties: { objectPath: { type: string } }
+    UploadResult:
+      type: object
+      required: [objectPath, url]
+      properties:
+        objectPath: { type: string }
+        url: { type: string }
+    AdminOverview:
+      type: object
+      required: [reports, requests, users, audit, directory]
+      properties:
+        reports: { type: array, items: { $ref: "#/components/schemas/AdminRecord" } }
+        requests: { type: array, items: { $ref: "#/components/schemas/AdminRecord" } }
+        users: { type: array, items: { $ref: "#/components/schemas/AdminRecord" } }
+        audit: { type: array, items: { $ref: "#/components/schemas/AdminRecord" } }
+        directory: { type: array, items: { $ref: "#/components/schemas/DirectoryEntry" } }
+    AdminRecord:
+      type: object
+      required: [id, title, detail, status, targetId, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        detail: { type: string }
+        status: { type: string }
+        targetId: { type: string }
+        createdAt: { type: string }
+    ModerationInput:
+      type: object
+      required: [action, targetId, reason]
+      properties:
+        action: { type: string, enum: [resolve-report, dismiss-request, hide-listing, verify-listing, suspend-user, restore-user] }
+        targetId: { type: string }
+        reason: { type: string, minLength: 5, maxLength: 1000 }

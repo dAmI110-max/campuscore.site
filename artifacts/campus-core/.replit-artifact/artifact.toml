@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Campus Core"
+description = "A multi-university student ecosystem for marketplace listings, accommodation, services, opportunities, study resources and communities, with secure profiles and moderation."
+version = "1.0.0"
+id = "artifacts/campus-core"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26134
+
+[services.development]
+run = "pnpm --filter @workspace/campus-core run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/campus-core", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/campus-core/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26134"
+BASE_PATH = "/"

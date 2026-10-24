@@ -1,0 +1,377 @@
+CAMPUS CORE — MASTER PRODUCT BUILD SPECIFICATION
+
+Act as the CTO, senior full-stack engineer, database architect, UI/UX designer, security engineer, QA engineer, and deployment engineer for Campus Core.
+
+Your responsibility is to build Campus Core into a production-ready, university-agnostic student ecosystem platform. This is a real commercial product intended for actual students, sellers, service providers, and university communities.
+
+Do not build a static demonstration, disposable prototype, or collection of disconnected screens. Build a functional application with persistent data, secure authentication, reliable database operations, responsive interfaces, and a maintainable architecture.
+
+1. PRODUCT VISION
+
+Product name: Campus Core
+
+Core positioning: Everything students need. One place.
+
+Mission: Connect university students with the products, services, accommodation, opportunities, educational resources, and communities they need throughout their academic journey.
+
+The platform must not be restricted to UNIOSUN. It must support students from different universities, faculties, departments, and countries through a scalable, database-driven architecture.
+
+Build the website mobile-first while ensuring excellent desktop, tablet, Android, and iOS browser compatibility.
+
+2. FIRST ACTION: INSPECT, PLAN, THEN BUILD
+
+Before implementation:
+
+1. Inspect the available project files, runtime, database capabilities, and deployment environment.
+2. Identify the most suitable supported architecture for a production web application.
+3. Define the database schema, authentication flow, permissions, application routes, and integrations.
+4. Identify external services requiring credentials or configuration.
+5. Create a phased implementation plan with testable acceptance criteria.
+6. Start implementation immediately after presenting a concise plan. Do not stop at producing a proposal.
+
+Prefer a stable, maintainable stack. Use TypeScript where supported, a reliable relational database, secure server-side operations, and reusable components.
+
+Use Supabase if it fits the selected architecture and can be configured correctly. Otherwise, explain the alternative before making an irreversible architectural decision.
+
+Do not add unnecessary dependencies or rebuild existing working infrastructure without a clear reason.
+
+3. MULTI-UNIVERSITY REGISTRATION
+
+This is a critical requirement.
+
+Registration must support students from different universities instead of assuming everyone attends UNIOSUN.
+
+Required registration information:
+
+- Full name or display name.
+- Unique username.
+- Email address.
+- Password when using email/password authentication.
+- Country.
+- University.
+- Faculty or school.
+- Department.
+- Optional profile picture.
+
+University selection must be searchable and database-driven.
+
+Requirements:
+
+- Populate the university directory using reliable, legitimate data sources.
+- Begin with Nigerian universities and design the system to support international institutions.
+- Support federal, state, private, and other recognized higher-education institutions.
+- Provide dependent selectors: country → university → faculty/school → department.
+- Load faculties and departments belonging to the selected university, not a universal list incorrectly applied to every institution.
+- Store institution records and their associated faculties and departments in the database.
+- Include a clear “My university isn't listed” workflow.
+- Allow users to request a missing institution or academic department.
+- Do not silently invent official universities, faculties, or departments.
+- Keep institution data maintainable so administrators can add, edit, and deactivate entries.
+- Allow a user to update their university, faculty, and department later, subject to sensible validation.
+- Do not require a university email address if the platform permits students to register with ordinary email providers.
+
+A university directory that cannot be populated reliably must be presented as an explicit data-import or administrator task. Never pretend an incomplete directory is complete.
+
+4. UNIQUE USERNAMES AND ACCOUNT SECURITY
+
+Usernames must be globally unique across Campus Core.
+
+Requirements:
+
+- Enforce uniqueness in the database, not just in the interface.
+- Normalize usernames consistently so capitalization cannot create duplicate accounts.
+- Validate allowed characters and length.
+- Check username availability during registration.
+- Handle simultaneous registrations safely using a database unique constraint.
+- Show clear messages when a username is unavailable.
+- Permit username changes only after validating availability.
+- Prevent users from impersonating administrators or other users through usernames.
+- Never store passwords in plaintext.
+- Use established authentication libraries and secure session handling.
+- Implement password reset, email verification where appropriate, sign-out, and session recovery.
+- Protect privileged operations with server-side authorization.
+
+5. GOOGLE SIGN-IN AND AUTHENTICATION
+
+Support:
+
+- Google OAuth.
+- Email and password.
+- Password recovery.
+- Email verification where configured.
+- Persistent sessions.
+- Secure logout.
+- Clear error and loading states.
+
+Google sign-in must be genuinely integrated, not simulated.
+
+Document the exact configuration required from the identity provider and hosting platform, including authorized redirect URLs and callback settings.
+
+If Google credentials or OAuth configuration are missing, clearly identify what must be configured. Never pretend sign-in works when the provider has not been configured.
+
+Avoid duplicate accounts when a person uses different authentication methods, and handle account linking safely.
+
+6. USER PROFILES
+
+Every authenticated user must have a persistent profile.
+
+Users must be able to:
+
+- View and edit their profile.
+- Change their display name.
+- Change their unique username when available.
+- Upload, change, or remove their profile picture.
+- Update their university, faculty, department, and bio.
+- View relevant public profile information.
+- Control which optional personal details are visible.
+- Recover from interrupted uploads or failed saves.
+
+Profile changes must persist in the database and remain correct after refreshing, signing out, and signing back in.
+
+Profile pictures must use actual storage, such as Supabase Storage, with appropriate file-size limits, allowed file types, upload validation, and access policies.
+
+Never simulate a successful upload or save if the operation failed.
+
+7. CAMPUS CORE FEATURES
+
+Build a coherent application with shared navigation, consistent permissions, and persistent data.
+
+A. Student marketplace
+
+- Create, edit, publish, and remove listings.
+- Product images, descriptions, prices, categories, and condition.
+- Search, sorting, and filtering.
+- Seller profiles and listing ownership.
+- Listing status and availability.
+- Reporting and moderation.
+- Appropriate seller contact options.
+- Prevent unauthorized edits to another user's listings.
+
+B. Accommodation
+
+- Accommodation listings with real descriptions, prices, locations, images, and contact details.
+- Search and filter by university, campus, location, price, and accommodation type.
+- Report suspicious listings.
+- Do not invent available rooms, prices, landlords, or properties.
+
+C. Services
+
+- Allow service providers to publish genuine services.
+- Categories, descriptions, pricing, location, and contact details.
+- Search, filtering, and reporting.
+
+D. Jobs and opportunities
+
+- Genuine job, internship, scholarship, and opportunity listings.
+- Clear closing dates where applicable.
+- Search and filtering.
+- Reporting and administrative moderation.
+- No fabricated employers or opportunities.
+
+E. Study
+
+- Organize legitimate study resources, textbooks where legally distributable, and past questions where permission allows.
+- Provide a foundation for an AI study assistant.
+- Clearly distinguish verified educational material from user-submitted content.
+- Do not fabricate uploaded documents or claim an AI feature works without a real implementation.
+
+F. Communities and events
+
+- Support university-specific and broader student communities.
+- Allow users to discover relevant communities and events.
+- Provide suitable moderation and reporting.
+- Do not populate the platform with fake members, attendance, events, or engagement figures.
+
+G. Messaging and notifications
+
+- Implement only when the selected architecture supports reliable persistence, appropriate authorization, and safe delivery.
+- Protect private messages from unauthorized access.
+- Include useful loading, empty, error, and notification states.
+- Do not display simulated conversations as real user activity.
+
+8. ADMINISTRATION AND MODERATION
+
+Build a protected administrative interface.
+
+Administrators should be able to:
+
+- Manage university, faculty, and department directories.
+- Review reports and suspicious listings.
+- Moderate users and content according to assigned permissions.
+- Suspend or restore accounts when authorized.
+- Review genuine platform activity and relevant audit logs.
+- Manage categories and appropriate platform settings.
+- Distinguish verified data from unverified user submissions.
+
+Implement role-based access control on the server and database. Hiding a button in the frontend is not sufficient authorization.
+
+Use least-privilege permissions. A regular user must never be able to grant themselves administrator privileges by modifying a request, URL, or browser state.
+
+Keep sensitive administrative actions auditable.
+
+9. REAL DATA ONLY — NO DEMONSTRATION DATA
+
+This is a strict production requirement.
+
+Do not ship:
+
+- Fake users.
+- Fake seller profiles.
+- Fake listings.
+- Fake transactions.
+- Fake account balances.
+- Fake messages.
+- Fake likes, views, sales, or engagement statistics.
+- Fake analytics or fabricated university counts.
+- Hardcoded claims that payments or external integrations succeeded.
+
+All user-facing records must come from real database records or explicitly labelled static reference information.
+
+An empty database must produce a useful empty state with a relevant call to action, not fabricated content.
+
+Analytics must be computed from genuine records. Clearly distinguish unavailable data from a genuine zero.
+
+Create development fixtures only when necessary for automated tests, and ensure they cannot appear in production.
+
+10. PAYMENTS AND FINANCIAL SAFETY
+
+Design the payment architecture to support Paystack when payment functionality is enabled.
+
+Requirements:
+
+- Initialize transactions through a trusted server-side endpoint.
+- Keep secret keys exclusively on the server.
+- Verify transactions server-side.
+- Validate transaction references and amounts against expected records.
+- Verify webhook signatures.
+- Handle duplicate webhook deliveries idempotently.
+- Maintain accurate payment and order records.
+- Prevent unauthorized balance changes and duplicate fulfillment.
+- Record transaction status and relevant audit information.
+- Handle pending, failed, cancelled, and successful payments correctly.
+
+Do not introduce a wallet, escrow, stored balance, or money-transfer feature unless the underlying financial logic, security controls, and required operational arrangements are implemented and reviewed.
+
+Do not enable real-money transactions until the full payment flow has been tested successfully.
+
+If payment configuration is incomplete, clearly mark the functionality as unavailable rather than simulating success.
+
+11. DESIGN AND USER EXPERIENCE
+
+Create a professional, modern, trustworthy design.
+
+Brand direction:
+
+- Lilac and purple accents.
+- Clean neutral surfaces.
+- High contrast and readable typography.
+- Consistent spacing, icons, forms, buttons, cards, and navigation.
+- Avoid excessive purple backgrounds or overwhelming gradients.
+- Avoid unnecessary animations and visual clutter.
+
+Provide:
+
+- Light mode.
+- Dark mode.
+- System theme option.
+- Persistent theme preference.
+- Accessible contrast and keyboard navigation.
+- Clear focus states and form validation.
+- Skeletons or progress indicators for loading.
+- Useful empty states and actionable error messages.
+- Confirmation for destructive actions.
+
+Responsive behaviour must be intentional, not merely scaled down.
+
+Test common phone widths, tablets, desktop screens, and narrow layouts. Prevent overlapping text, clipped buttons, broken navigation, horizontal overflow, unreadable forms, and inaccessible dialogs.
+
+Support current mainstream mobile browsers, including Safari on iOS and Chrome on Android.
+
+12. QUALITY, SECURITY, AND TESTING
+
+Quality is a priority. Do not claim that the application is bug-free merely because it builds successfully.
+
+Create and run automated tests for critical functionality, including:
+
+- Registration and authentication.
+- Google OAuth integration where credentials are available.
+- Username uniqueness.
+- University/faculty/department selection.
+- Profile editing and image upload.
+- Authorization and role permissions.
+- Listing creation, editing, and deletion.
+- Database access policies.
+- Payment verification and duplicate-event handling.
+- Responsive navigation and key forms.
+
+Run:
+
+- Type checking.
+- Linting where configured.
+- Production build.
+- Relevant automated tests.
+- Browser-based end-to-end tests where available.
+- Responsive layout checks.
+- Accessibility checks for key journeys.
+- Security checks on database policies, secrets, and protected endpoints.
+
+Fix the root cause of discovered defects rather than masking them with fake fallback data or empty error handlers.
+
+Never silently turn a failed database request into a successful empty result.
+
+Use proper error boundaries and recovery states so a failure in one feature does not unnecessarily crash the entire application.
+
+If a test cannot be executed because a tool, device, credential, or external service is unavailable, document that limitation. Do not report an unrun test as passed.
+
+13. DEPLOYMENT AND LAUNCH
+
+Prepare the website for production deployment.
+
+Requirements:
+
+- Connect a custom domain once the domain is available.
+- Configure HTTPS.
+- Configure production environment variables securely.
+- Ensure database migrations and schema are reproducible.
+- Configure authentication redirect URLs.
+- Provide appropriate error handling and production logging.
+- Remove development-only routes and test fixtures from production.
+- Confirm that a clean production build works.
+- Verify sign-up, sign-in, profile updates, and key user journeys on the deployed site.
+
+Keep source code version-controlled and document the deployment and rollback process.
+
+If an Android application is later required, plan the mobile release separately. Do not assume that a responsive website automatically constitutes a native Android app or that Google Play approval is guaranteed.
+
+14. PERFORMANCE AND MAINTAINABILITY
+
+- Reuse components and avoid duplicated business logic.
+- Keep database queries efficient.
+- Add pagination or sensible limits for growing lists.
+- Optimize images and loading behaviour.
+- Avoid exposing secrets or sensitive user data.
+- Document important environment variables without recording their values.
+- Keep the architecture extensible for additional universities and countries.
+- Use stable database identifiers instead of relying on university or department names as unique identifiers.
+- Design for gradual growth rather than unnecessary enterprise complexity.
+
+15. DEFINITION OF DONE
+
+The project is not finished simply because the homepage looks attractive.
+
+Before declaring the first release ready, provide:
+
+1. A summary of the architecture and features actually implemented.
+2. The database schema and migration details.
+3. The required environment variables and external configuration.
+4. A list of automated tests executed and their actual results.
+5. A list of critical defects found and fixed.
+6. Any remaining known limitations or launch blockers.
+7. A clear production deployment procedure.
+8. A final checklist confirming which user journeys were verified on the deployed website.
+
+Do not claim that an integration is complete if it still requires credentials or manual configuration.
+
+Prioritize a secure, working core release over superficial completeness. Build in phases, verify each phase, and continue implementation rather than stopping after generating plans or mock interfaces.
+
+Begin by inspecting the project environment, proposing the architecture and implementation phases, and then implementing the first phase immediately.

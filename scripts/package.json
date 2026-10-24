@@ -8,7 +8,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@clerk/express": "^2.1.82",
     "@types/node": "catalog:",
+    "@workspace/db": "workspace:*",
+    "sharp": "^0.35.5",
     "tsx": "catalog:"
   }
 }

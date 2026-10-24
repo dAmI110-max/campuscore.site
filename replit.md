@@ -1,45 +1,50 @@
-# [Project name]
+# Campus Core
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Everything students need. One place. A university-agnostic student platform, initially serving Nigeria.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Web: `artifacts/campus-core: web` managed workflow; served at `/`.
+- API: `artifacts/api-server: API Server` managed workflow; served at `/api`.
+- `pnpm run typecheck` — full workspace typecheck.
+- `PORT=26134 BASE_PATH=/ pnpm --filter @workspace/campus-core run build` — frontend production build from shell.
+- `pnpm --filter @workspace/api-server run build` — API production build.
+- `pnpm --filter @workspace/scripts exec tsx --test ../artifacts/api-server/src/campus-core.test.ts` — regression tests (requires running API).
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate hooks and Zod schemas.
+- `pnpm --filter @workspace/db run push` — development schema only.
+- `pnpm --filter @workspace/db exec drizzle-kit generate --config ./drizzle.config.ts` — SQL schema history.
+- `pnpm --filter @workspace/scripts exec tsx src/import-directory.ts` — explicit official reference-data import, not user fixtures.
 
-## Stack
+## Stack & Structure
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- TypeScript, React + Vite + Wouter, Express 5, PostgreSQL + Drizzle, managed Clerk authentication, App Storage.
+- `lib/api-spec/openapi.yaml` — contract; generated hooks in `lib/api-client-react`.
+- `lib/db/src/schema` — normalized schema; generated SQL snapshots in `lib/db/drizzle`.
+- `artifacts/api-server/src/routes` — domain routers. Server-only credentials, cookie authentication, ownership checks, audited admin actions.
+- `artifacts/campus-core/src/pages` — public discovery, seven boards, listing CRUD, profile, auth, settings, moderation.
+- `docs/RELEASE.md` — scope, configuration, acceptance results, blockers and release procedure.
 
-## Where things live
+## Product Rules
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- No fabricated users, listings, properties, employers, conversations, attendance, analytics, balances or success states. Empty states are intentional.
+- Do not make this UNIOSUN-only. Academics must remain database-driven and correctly scoped by parent.
+- Do not invent official university/faculty/department data. NUC data is sourced reference information. Academic coverage is explicitly incomplete.
+- Lilac/purple accents on neutral surfaces; mobile-first with light, dark and system themes.
+- Payments, messaging and AI are disabled until genuinely implemented and verified. No wallet/escrow/stored balance.
+- Do not call this first build production-ready. Signed-in journeys and production verification remain launch gates.
 
-## Architecture decisions
+## Architecture Decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Kept existing Express/Postgres foundation instead of introducing a parallel Supabase stack. Managed identity and App Storage provide the required companion services.
+- Only the backend receives database credentials. RLS is enabled without public policies; the backend owner bypasses RLS and must enforce end-user authorization on every route.
+- No automatic first-user admin. Explicit operator script resolves an existing verified account in each environment; production identity must not be copied from development.
+- Faculty/department fields can remain unset while verified coverage is incomplete, rather than blocking all students or inventing their departments.
+- Staging image objects are never served. Finalization checks declared size/type and magic bytes, then copies a pinned object generation to an unsigned immutable destination.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Browser auth is cookie-based; do not add bearer-token handling.
+- Keep Clerk's canonical production proxy and wildcard auth routes.
+- Generate API schemas after contract edits. React Query codegen is v5; client TypeScript includes `dom.iterable`.
+- Replit Publish manages production schema changes. No startup DDL or custom production migration hooks.
+- The unused mockup sandbox is not the product UI.

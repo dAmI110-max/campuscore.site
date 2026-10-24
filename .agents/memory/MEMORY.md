@@ -1,0 +1,1 @@
+- [Campus Core scope](campus-core-scope.md) — real student ecosystem, no fabricated activity, university-agnostic, and explicit launch gates.
