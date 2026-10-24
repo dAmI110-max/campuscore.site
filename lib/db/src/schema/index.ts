@@ -5,3 +5,4 @@ export * from "./moderation";
 export * from "./uploads";
 export * from "./social";
 export * from "./roles";
+export * from "./commerce";

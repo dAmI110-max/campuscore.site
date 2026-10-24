@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useClerk } from "@clerk/react";
-import { Bookmark, Compass, LogOut, Menu, Plus, Settings, ShieldCheck, User, FileText, AlertTriangle, MessageCircle, Bell, Users, ShieldAlert } from "lucide-react";
+import { Bookmark, Compass, LogOut, Menu, Plus, Settings, ShieldCheck, User, FileText, AlertTriangle, MessageCircle, Bell, Users, ShieldAlert, Store, BarChart3 } from "lucide-react";
 import { useGetSocialSummary, getGetSocialSummaryQueryKey } from "@workspace/api-client-react";
 import { useVisible } from "@/hooks/use-visible";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <MobileLink href="/messages" icon={<MessageCircle className="h-4 w-4" />} onClick={() => setOpen(false)}>Messages<Count n={unreadMsgs} /></MobileLink>
                     <MobileLink href="/notifications" icon={<Bell className="h-4 w-4" />} onClick={() => setOpen(false)}>Notifications<Count n={unreadNotes} /></MobileLink>
                     <MobileLink href="/safety" icon={<ShieldAlert className="h-4 w-4" />} onClick={() => setOpen(false)}>Safety</MobileLink>
+                    <MobileLink href="/account" icon={<Store className="h-4 w-4" />} onClick={() => setOpen(false)}>Buying and selling</MobileLink>
                   </>
                 )}
               </nav>
@@ -98,6 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild><Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/my-listings"><FileText className="mr-2 h-4 w-4" />My listings</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/account" data-testid="link-menu-account"><Store className="mr-2 h-4 w-4" />Buying and selling</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/saved"><Bookmark className="mr-2 h-4 w-4" />Saved</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link></DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -107,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <DropdownMenuItem asChild><Link href="/safety"><ShieldAlert className="mr-2 h-4 w-4" />Safety</Link></DropdownMenuItem>
                     {(p?.role === "admin" || p?.role === "owner") && <DropdownMenuItem asChild><Link href="/admin"><ShieldCheck className="mr-2 h-4 w-4" />Admin</Link></DropdownMenuItem>}
                     {(p?.role === "admin" || p?.role === "owner") && <DropdownMenuItem asChild><Link href="/admin/safety"><ShieldAlert className="mr-2 h-4 w-4" />Safety reports</Link></DropdownMenuItem>}
+                    {(p?.role === "admin" || p?.role === "owner") && <DropdownMenuItem asChild><Link href="/admin/commerce" data-testid="link-menu-admin-commerce"><BarChart3 className="mr-2 h-4 w-4" />Commerce admin</Link></DropdownMenuItem>}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => signOut({ redirectUrl: basePath || "/" })} data-testid="button-sign-out"><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
                   </DropdownMenuContent>

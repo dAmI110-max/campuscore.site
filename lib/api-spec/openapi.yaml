@@ -6,6 +6,16 @@ info:
 servers:
   - url: /api
 paths:
+  /commerce/account:
+    $ref: "./commerce.openapi.yaml#/paths/~1commerce~1account"
+  /commerce/checkout:
+    $ref: "./commerce.openapi.yaml#/paths/~1commerce~1checkout"
+  /admin/commerce:
+    $ref: "./commerce.openapi.yaml#/paths/~1admin~1commerce"
+  /admin/commerce/accounts/{id}:
+    $ref: "./commerce.openapi.yaml#/paths/~1admin~1commerce~1accounts~1{id}"
+  /admin/commerce/launch:
+    $ref: "./commerce.openapi.yaml#/paths/~1admin~1commerce~1launch"
   /people:
     $ref: "./social.openapi.yaml#/paths/~1people"
   /social/summary:
@@ -424,7 +434,7 @@ components:
         avatarPath: { type: [string, "null"] }
     Profile:
       type: object
-      required: [id, displayName, username, countryId, universityId, facultyId, departmentId, bio, showAcademics, avatarPath, role, suspended, complete]
+      required: [id, displayName, username, countryId, universityId, facultyId, departmentId, bio, showAcademics, avatarPath, role, commerceRole, suspended, complete]
       properties:
         id: { type: string }
         displayName: { type: string }
@@ -437,6 +447,7 @@ components:
         showAcademics: { type: boolean }
         avatarPath: { type: [string, "null"] }
         role: { type: string, enum: [student, admin, owner] }
+        commerceRole: { type: string, enum: [buyer, seller] }
         suspended: { type: boolean }
         complete: { type: boolean }
     PublicProfile:

@@ -27,6 +27,8 @@ import AdminSafety from "@/pages/admin-safety";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
 import AdminAccess from "@/pages/admin-access";
+import AdminCommerce from "@/pages/admin-commerce";
+import Account from "@/pages/account";
 import { SignInPage, SignUpPage } from "@/pages/auth";
 import { KINDS } from "@/lib/kinds";
 
@@ -161,6 +163,8 @@ function Router() {
           <Route path="/admin"><RequireAuth><Admin /></RequireAuth></Route>
           <Route path="/admin/access"><RequireAuth><AdminAccess /></RequireAuth></Route>
           <Route path="/admin/safety"><RequireAuth><AdminSafety /></RequireAuth></Route>
+          <Route path="/admin/commerce"><RequireAuth><AdminCommerce /></RequireAuth></Route>
+          <Route path="/account"><RequireProfile><Account /></RequireProfile></Route>
           <Route component={NotFound} />
         </Switch>
       </ErrorBoundary>

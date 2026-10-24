@@ -3,11 +3,17 @@ name: Commerce and Seller Premium rules
 description: Requested provider, buyer/seller separation, official launch gating and accurate financial reporting.
 ---
 
-The requested payment provider is Paystack for marketplace purchases and Seller Premium. Do not silently replace it with another provider.
+The requested payment provider is Paystack for marketplace purchases and Seller Premium. The user specifically requested its API directly rather than requiring a Replit connector, with legitimate credentials configured securely through deployment secrets. Do not silently replace it with another provider.
 
 **Why:** The user's commerce specification explicitly names Paystack.
 
-**How to apply:** Agree any provider change with the user before integrating it. Start in test mode and leave live charges disabled until credentials, verification and webhooks are configured and tested.
+**How to apply:** Agree any provider change with the user before integrating it, respecting the available payment workflow's provider restrictions. Start in test mode and leave live charges disabled until credentials, verification and webhooks are configured and tested. Do not pretend an inert endpoint or generic reconciliation check is an implemented provider integration.
+
+Campus Core requires genuine escrow, not immediate seller payouts or ordinary split payments.
+
+**Why:** The user explicitly requires a compliant funds-holding and delayed-release arrangement before live payments, rather than merely qualifying escrow claims.
+
+**How to apply:** Keep live payments disabled until compliant custody and delayed release are confirmed and implemented. Do not advertise or activate escrow based on a platform balance, delayed payout, split payment, internal held flag or configured API key. Test-mode preparation is allowed only with honest limits and no claims of successful real-provider tests without valid credentials and actual successful tests.
 
 Campus Core's intended payment-account country is Nigeria, operating as an individual / not registered as a business yet.
 

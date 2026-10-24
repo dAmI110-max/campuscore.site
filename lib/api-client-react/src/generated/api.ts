@@ -31,11 +31,21 @@ import type {
   ChatConversation,
   ChatMessage,
   CheckUsernameParams,
+  CommerceAccount,
+  CommerceAccountChoice,
+  CommerceAdmin,
+  CommerceCheckoutInput,
+  CommerceLaunch,
+  CommerceLaunchChange,
+  CommerceRoleChange,
+  CommerceUnavailable,
+  CommerceUser,
   ConversationDetail,
   ConversationPage,
   CreateUserReportInput,
   DirectoryEntry,
   DirectoryInput,
+  GetCommerceAdminParams,
   GetConversationParams,
   GetDirectoryParams,
   GetStaffAccessParams,
@@ -107,6 +117,532 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetCommerceAccountUrl = () => {
+
+
+
+
+  return `/api/commerce/account`
+}
+
+export const getCommerceAccount = async ( options?: Parameters<typeof customFetch>[1]): Promise<CommerceAccount> => {
+
+  return customFetch<CommerceAccount>(getGetCommerceAccountUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCommerceAccountQueryKey = () => {
+    return [
+    `/api/commerce/account`
+    ] as const;
+    }
+
+
+export const getGetCommerceAccountQueryOptions = <TData = Awaited<ReturnType<typeof getCommerceAccount>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCommerceAccountQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommerceAccount>>> = ({ signal }) => getCommerceAccount({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCommerceAccount>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCommerceAccountQueryResult = NonNullable<Awaited<ReturnType<typeof getCommerceAccount>>>
+export type GetCommerceAccountQueryError = ErrorType<unknown>
+
+
+export function useGetCommerceAccount<TData = Awaited<ReturnType<typeof getCommerceAccount>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAccount>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCommerceAccount>>,
+          TError,
+          Awaited<ReturnType<typeof getCommerceAccount>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCommerceAccount<TData = Awaited<ReturnType<typeof getCommerceAccount>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAccount>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCommerceAccount>>,
+          TError,
+          Awaited<ReturnType<typeof getCommerceAccount>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCommerceAccount<TData = Awaited<ReturnType<typeof getCommerceAccount>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetCommerceAccount<TData = Awaited<ReturnType<typeof getCommerceAccount>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCommerceAccountQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getChooseCommerceAccountUrl = () => {
+
+
+
+
+  return `/api/commerce/account`
+}
+
+export const chooseCommerceAccount = async (commerceAccountChoice: CommerceAccountChoice, options?: Parameters<typeof customFetch>[1]): Promise<CommerceAccount> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommerceAccount>(getChooseCommerceAccountUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(commerceAccountChoice)
+  }
+);}
+
+
+
+
+
+export const getChooseCommerceAccountMutationKey = () => ['chooseCommerceAccount'] as const;
+
+export const getChooseCommerceAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chooseCommerceAccount>>, TError,ChooseCommerceAccountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof chooseCommerceAccount>>, TError,ChooseCommerceAccountMutationVariables, TContext> => {
+
+const mutationKey = getChooseCommerceAccountMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof chooseCommerceAccount>>, ChooseCommerceAccountMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  chooseCommerceAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChooseCommerceAccountMutationResult = NonNullable<Awaited<ReturnType<typeof chooseCommerceAccount>>>
+    export type ChooseCommerceAccountMutationBody = BodyType<CommerceAccountChoice>
+    export type ChooseCommerceAccountMutationError = ErrorType<unknown>
+    export type ChooseCommerceAccountMutationVariables = {data: BodyType<CommerceAccountChoice>}
+
+    export const useChooseCommerceAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chooseCommerceAccount>>, TError,ChooseCommerceAccountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof chooseCommerceAccount>>,
+        TError,
+        ChooseCommerceAccountMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChooseCommerceAccountMutationOptions(options), queryClient);
+    }
+
+export const getStartCommerceCheckoutUrl = () => {
+
+
+
+
+  return `/api/commerce/checkout`
+}
+
+export const startCommerceCheckout = async (commerceCheckoutInput: CommerceCheckoutInput, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<unknown>(getStartCommerceCheckoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(commerceCheckoutInput)
+  }
+);}
+
+
+
+
+
+export const getStartCommerceCheckoutMutationKey = () => ['startCommerceCheckout'] as const;
+
+export const getStartCommerceCheckoutMutationOptions = <TError = ErrorType<CommerceUnavailable>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startCommerceCheckout>>, TError,StartCommerceCheckoutMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startCommerceCheckout>>, TError,StartCommerceCheckoutMutationVariables, TContext> => {
+
+const mutationKey = getStartCommerceCheckoutMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startCommerceCheckout>>, StartCommerceCheckoutMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  startCommerceCheckout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartCommerceCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof startCommerceCheckout>>>
+    export type StartCommerceCheckoutMutationBody = BodyType<CommerceCheckoutInput>
+    export type StartCommerceCheckoutMutationError = ErrorType<CommerceUnavailable>
+    export type StartCommerceCheckoutMutationVariables = {data: BodyType<CommerceCheckoutInput>}
+
+    export const useStartCommerceCheckout = <TError = ErrorType<CommerceUnavailable>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startCommerceCheckout>>, TError,StartCommerceCheckoutMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof startCommerceCheckout>>,
+        TError,
+        StartCommerceCheckoutMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStartCommerceCheckoutMutationOptions(options), queryClient);
+    }
+
+export const getGetCommerceAdminUrl = (params?: GetCommerceAdminParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/commerce?${stringifiedParams}` : `/api/admin/commerce`
+}
+
+export const getCommerceAdmin = async (params?: GetCommerceAdminParams, options?: Parameters<typeof customFetch>[1]): Promise<CommerceAdmin> => {
+
+  return customFetch<CommerceAdmin>(getGetCommerceAdminUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCommerceAdminQueryKey = (params?: GetCommerceAdminParams,) => {
+    return [
+    `/api/admin/commerce`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetCommerceAdminQueryOptions = <TData = Awaited<ReturnType<typeof getCommerceAdmin>>, TError = ErrorType<unknown>>(params?: GetCommerceAdminParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAdmin>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCommerceAdminQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommerceAdmin>>> = ({ signal }) => getCommerceAdmin(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCommerceAdmin>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCommerceAdminQueryResult = NonNullable<Awaited<ReturnType<typeof getCommerceAdmin>>>
+export type GetCommerceAdminQueryError = ErrorType<unknown>
+
+
+export function useGetCommerceAdmin<TData = Awaited<ReturnType<typeof getCommerceAdmin>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetCommerceAdminParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAdmin>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCommerceAdmin>>,
+          TError,
+          Awaited<ReturnType<typeof getCommerceAdmin>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCommerceAdmin<TData = Awaited<ReturnType<typeof getCommerceAdmin>>, TError = ErrorType<unknown>>(
+ params?: GetCommerceAdminParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAdmin>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCommerceAdmin>>,
+          TError,
+          Awaited<ReturnType<typeof getCommerceAdmin>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCommerceAdmin<TData = Awaited<ReturnType<typeof getCommerceAdmin>>, TError = ErrorType<unknown>>(
+ params?: GetCommerceAdminParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAdmin>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetCommerceAdmin<TData = Awaited<ReturnType<typeof getCommerceAdmin>>, TError = ErrorType<unknown>>(
+ params?: GetCommerceAdminParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommerceAdmin>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCommerceAdminQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getManageCommerceAccountUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/commerce/accounts/${id}`
+}
+
+export const manageCommerceAccount = async (id: string,
+    commerceRoleChange: CommerceRoleChange, options?: Parameters<typeof customFetch>[1]): Promise<CommerceUser> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommerceUser>(getManageCommerceAccountUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(commerceRoleChange)
+  }
+);}
+
+
+
+
+
+export const getManageCommerceAccountMutationKey = () => ['manageCommerceAccount'] as const;
+
+export const getManageCommerceAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof manageCommerceAccount>>, TError,ManageCommerceAccountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof manageCommerceAccount>>, TError,ManageCommerceAccountMutationVariables, TContext> => {
+
+const mutationKey = getManageCommerceAccountMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof manageCommerceAccount>>, ManageCommerceAccountMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  manageCommerceAccount(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ManageCommerceAccountMutationResult = NonNullable<Awaited<ReturnType<typeof manageCommerceAccount>>>
+    export type ManageCommerceAccountMutationBody = BodyType<CommerceRoleChange>
+    export type ManageCommerceAccountMutationError = ErrorType<unknown>
+    export type ManageCommerceAccountMutationVariables = {id: string;data: BodyType<CommerceRoleChange>}
+
+    export const useManageCommerceAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof manageCommerceAccount>>, TError,ManageCommerceAccountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof manageCommerceAccount>>,
+        TError,
+        ManageCommerceAccountMutationVariables,
+        TContext
+      > => {
+      return useMutation(getManageCommerceAccountMutationOptions(options), queryClient);
+    }
+
+export const getSetCommerceLaunchUrl = () => {
+
+
+
+
+  return `/api/admin/commerce/launch`
+}
+
+export const setCommerceLaunch = async (commerceLaunchChange: CommerceLaunchChange, options?: Parameters<typeof customFetch>[1]): Promise<CommerceLaunch> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommerceLaunch>(getSetCommerceLaunchUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(commerceLaunchChange)
+  }
+);}
+
+
+
+
+
+export const getSetCommerceLaunchMutationKey = () => ['setCommerceLaunch'] as const;
+
+export const getSetCommerceLaunchMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCommerceLaunch>>, TError,SetCommerceLaunchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setCommerceLaunch>>, TError,SetCommerceLaunchMutationVariables, TContext> => {
+
+const mutationKey = getSetCommerceLaunchMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCommerceLaunch>>, SetCommerceLaunchMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  setCommerceLaunch(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetCommerceLaunchMutationResult = NonNullable<Awaited<ReturnType<typeof setCommerceLaunch>>>
+    export type SetCommerceLaunchMutationBody = BodyType<CommerceLaunchChange>
+    export type SetCommerceLaunchMutationError = ErrorType<unknown>
+    export type SetCommerceLaunchMutationVariables = {data: BodyType<CommerceLaunchChange>}
+
+    export const useSetCommerceLaunch = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCommerceLaunch>>, TError,SetCommerceLaunchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setCommerceLaunch>>,
+        TError,
+        SetCommerceLaunchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetCommerceLaunchMutationOptions(options), queryClient);
+    }
 
 export const getSearchPeopleUrl = (params?: SearchPeopleParams,) => {
   const normalizedParams = new URLSearchParams();

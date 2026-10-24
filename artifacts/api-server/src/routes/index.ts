@@ -9,6 +9,8 @@ import accessRouter from "./staff-access";
 import messagingRouter from "./messaging";
 import notificationsRouter from "./notifications";
 import safetyRouter from "./safety";
+import commerceRouter from "./commerce";
+import commerceAnalyticsRouter from "./commerce-analytics";
 
 const router: IRouter = Router();
 
@@ -22,5 +24,7 @@ router.use(storageRouter);
 router.use(messagingRouter);
 router.use(notificationsRouter);
 router.use(safetyRouter);
+router.use(commerceRouter);
+router.use(commerceAnalyticsRouter);
 
 export default router;

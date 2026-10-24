@@ -48,10 +48,10 @@ export default function ListingForm() {
   }
   // Mount the form only after data is available. Resetting already-mounted Radix
   // selects races their native form controls and can clear category/visibility.
-  return <ListingEditor key={isNew ? "new" : id} listing={isNew ? undefined : existing.data} universityId={me.profile?.universityId ?? null} />;
+  return <ListingEditor key={isNew ? "new" : id} listing={isNew ? undefined : existing.data} universityId={me.profile?.universityId ?? null} isBuyer={me.profile?.commerceRole === "buyer"} />;
 }
 
-function ListingEditor({ listing, universityId }: { listing?: Listing; universityId: number | null }) {
+function ListingEditor({ listing, universityId, isBuyer }: { listing?: Listing; universityId: number | null; isBuyer: boolean }) {
   const isNew = !listing;
   const id = listing?.id ?? 0;
   const search = useSearch();
@@ -102,6 +102,7 @@ function ListingEditor({ listing, universityId }: { listing?: Listing; universit
   }
 
   const pending = create.isPending || update.isPending;
+  const buyerBlocked = isNew && isBuyer && kind === "marketplace";
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -124,6 +125,13 @@ function ListingEditor({ listing, universityId }: { listing?: Listing; universit
               </div>
             </FormItem>
           )} />
+
+          {buyerBlocked && (
+            <div role="status" className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-accent/50 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="notice-buyer-marketplace">
+              <p className="text-sm"><span className="font-semibold">You are in buyer mode.</span> <span className="text-muted-foreground">Switch to seller mode to post marketplace items. Other boards stay open to you.</span></p>
+              <Button asChild size="sm" type="button"><Link href="/account" data-testid="link-switch-seller">Switch to seller</Link></Button>
+            </div>
+          )}
 
           <section className="space-y-5 rounded-2xl border bg-card p-5 sm:p-6">
             <FormField control={form.control} name="title" render={({ field }) => (
@@ -207,7 +215,7 @@ function ListingEditor({ listing, universityId }: { listing?: Listing; universit
             )} />
             <div className="flex gap-2">
               <Button type="button" variant="ghost" onClick={() => history.back()}>Cancel</Button>
-              <Button type="submit" disabled={pending || uploading} data-testid="button-submit-listing">{uploading ? "Uploading photos" : pending ? "Saving" : isNew ? "Save listing" : "Save changes"}</Button>
+              <Button type="submit" disabled={pending || uploading || buyerBlocked} data-testid="button-submit-listing">{uploading ? "Uploading photos" : pending ? "Saving" : isNew ? "Save listing" : "Save changes"}</Button>
             </div>
           </div>
         </form>

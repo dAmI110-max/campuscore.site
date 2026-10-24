@@ -5,6 +5,7 @@
  * Campus Core API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProfileCommerceRole } from './profileCommerceRole';
 import type { ProfileRole } from './profileRole';
 
 export interface Profile {
@@ -25,6 +26,7 @@ export interface Profile {
   /** @nullable */
   avatarPath: string | null;
   role: ProfileRole;
+  commerceRole: ProfileCommerceRole;
   suspended: boolean;
   complete: boolean;
 }

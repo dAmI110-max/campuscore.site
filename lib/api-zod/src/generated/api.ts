@@ -8,6 +8,199 @@
 import * as zod from 'zod';
 
 
+export const GetCommerceAccountResponse = zod.object({
+  "accountType": zod.enum(['buyer', 'seller']),
+  "sellerListingCount": zod.int(),
+  "orders": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "amountMinor": zod.int(),
+  "currency": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string()
+})),
+  "premium": zod.union([zod.object({
+  "status": zod.enum(['launch_unconfigured', 'waiting', 'payment_unavailable']),
+  "eligibleAt": zod.string().nullable(),
+  "priceMinor": zod.int(),
+  "currency": zod.string(),
+  "checkoutEnabled": zod.boolean(),
+  "explanation": zod.string()
+}),zod.null()]),
+  "launch": zod.object({
+  "publicLaunchAt": zod.string().nullable(),
+  "premiumEligibleAt": zod.string().nullable(),
+  "timezone": zod.string(),
+  "paymentsEnabled": zod.boolean(),
+  "escrowEnabled": zod.boolean()
+})
+})
+
+
+export const ChooseCommerceAccountBody = zod.object({
+  "accountType": zod.enum(['buyer', 'seller'])
+})
+
+export const ChooseCommerceAccountResponse = zod.object({
+  "accountType": zod.enum(['buyer', 'seller']),
+  "sellerListingCount": zod.int(),
+  "orders": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "amountMinor": zod.int(),
+  "currency": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string()
+})),
+  "premium": zod.union([zod.object({
+  "status": zod.enum(['launch_unconfigured', 'waiting', 'payment_unavailable']),
+  "eligibleAt": zod.string().nullable(),
+  "priceMinor": zod.int(),
+  "currency": zod.string(),
+  "checkoutEnabled": zod.boolean(),
+  "explanation": zod.string()
+}),zod.null()]),
+  "launch": zod.object({
+  "publicLaunchAt": zod.string().nullable(),
+  "premiumEligibleAt": zod.string().nullable(),
+  "timezone": zod.string(),
+  "paymentsEnabled": zod.boolean(),
+  "escrowEnabled": zod.boolean()
+})
+})
+
+
+
+
+
+export const StartCommerceCheckoutBody = zod.object({
+  "kind": zod.enum(['marketplace', 'premium']),
+  "listingId": zod.int().min(1).optional()
+})
+
+export const StartCommerceCheckoutResponse = zod.void()
+
+
+export const getCommerceAdminQueryQMax = 100;
+
+
+export const getCommerceAdminQueryFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getCommerceAdminQueryToRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getCommerceAdminQueryPageDefault = 1;
+
+
+
+export const GetCommerceAdminQueryParams = zod.object({
+  "q": zod.coerce.string().max(getCommerceAdminQueryQMax).optional(),
+  "accountType": zod.enum(['buyer', 'seller']).optional(),
+  "universityId": zod.coerce.number().int().min(1).optional(),
+  "suspended": zod.enum(['true', 'false']).optional(),
+  "from": zod.coerce.string().regex(getCommerceAdminQueryFromRegExp).optional(),
+  "to": zod.coerce.string().regex(getCommerceAdminQueryToRegExp).optional(),
+  "page": zod.coerce.number().int().min(1).default(getCommerceAdminQueryPageDefault)
+})
+
+export const GetCommerceAdminResponse = zod.object({
+  "totals": zod.object({
+  "users": zod.int(),
+  "buyers": zod.int(),
+  "sellers": zod.int(),
+  "suspended": zod.int(),
+  "today": zod.int(),
+  "week": zod.int(),
+  "month": zod.int()
+}),
+  "users": zod.array(zod.object({
+  "id": zod.string(),
+  "displayName": zod.string(),
+  "username": zod.string().nullable(),
+  "accountType": zod.enum(['buyer', 'seller']),
+  "suspended": zod.boolean(),
+  "universityName": zod.string().nullable(),
+  "createdAt": zod.string()
+})),
+  "total": zod.int(),
+  "page": zod.int(),
+  "pageSize": zod.int(),
+  "trends": zod.array(zod.object({
+  "date": zod.string(),
+  "count": zod.int()
+})),
+  "universities": zod.array(zod.object({
+  "name": zod.string(),
+  "count": zod.int()
+})),
+  "launch": zod.object({
+  "publicLaunchAt": zod.string().nullable(),
+  "premiumEligibleAt": zod.string().nullable(),
+  "timezone": zod.string(),
+  "paymentsEnabled": zod.boolean(),
+  "escrowEnabled": zod.boolean()
+}),
+  "finance": zod.object({
+  "verifiedMarketplaceMinor": zod.int(),
+  "marketplaceRefundsMinor": zod.int(),
+  "premiumRevenueMinor": zod.int(),
+  "processingFeesMinor": zod.int().nullable(),
+  "platformEarningsMinor": zod.int().nullable(),
+  "pending": zod.int(),
+  "failed": zod.int(),
+  "cancelled": zod.int(),
+  "disputed": zod.int(),
+  "refunded": zod.int(),
+  "paymentsEnabled": zod.boolean(),
+  "escrowEnabled": zod.boolean()
+})
+})
+
+
+
+
+
+export const ManageCommerceAccountParams = zod.object({
+  "id": zod.coerce.string().min(1)
+})
+
+export const manageCommerceAccountBodyReasonMin = 10;
+export const manageCommerceAccountBodyReasonMax = 1000;
+
+
+
+export const ManageCommerceAccountBody = zod.object({
+  "accountType": zod.enum(['buyer', 'seller']),
+  "reason": zod.string().min(manageCommerceAccountBodyReasonMin).max(manageCommerceAccountBodyReasonMax)
+})
+
+export const ManageCommerceAccountResponse = zod.object({
+  "id": zod.string(),
+  "displayName": zod.string(),
+  "username": zod.string().nullable(),
+  "accountType": zod.enum(['buyer', 'seller']),
+  "suspended": zod.boolean(),
+  "universityName": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+
+
+export const setCommerceLaunchBodyReasonMin = 10;
+export const setCommerceLaunchBodyReasonMax = 1000;
+
+
+
+export const SetCommerceLaunchBody = zod.object({
+  "publicLaunchAt": zod.string().nullable(),
+  "reason": zod.string().min(setCommerceLaunchBodyReasonMin).max(setCommerceLaunchBodyReasonMax)
+})
+
+export const SetCommerceLaunchResponse = zod.object({
+  "publicLaunchAt": zod.string().nullable(),
+  "premiumEligibleAt": zod.string().nullable(),
+  "timezone": zod.string(),
+  "paymentsEnabled": zod.boolean(),
+  "escrowEnabled": zod.boolean()
+})
+
+
 export const searchPeopleQueryQMax = 100;
 
 export const searchPeopleQueryPageDefault = 1;
@@ -475,6 +668,7 @@ export const GetProfileResponse = zod.object({
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
   "role": zod.enum(['student', 'admin', 'owner']),
+  "commerceRole": zod.enum(['buyer', 'seller']),
   "suspended": zod.boolean(),
   "complete": zod.boolean()
 })
@@ -514,6 +708,7 @@ export const SaveProfileResponse = zod.object({
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
   "role": zod.enum(['student', 'admin', 'owner']),
+  "commerceRole": zod.enum(['buyer', 'seller']),
   "suspended": zod.boolean(),
   "complete": zod.boolean()
 })

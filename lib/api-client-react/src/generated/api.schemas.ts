@@ -140,6 +140,14 @@ export const ProfileRole = {
   owner: 'owner',
 } as const;
 
+export type ProfileCommerceRole = typeof ProfileCommerceRole[keyof typeof ProfileCommerceRole];
+
+
+export const ProfileCommerceRole = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
 export interface Profile {
   id: string;
   displayName: string;
@@ -158,6 +166,7 @@ export interface Profile {
   /** @nullable */
   avatarPath: string | null;
   role: ProfileRole;
+  commerceRole: ProfileCommerceRole;
   suspended: boolean;
   complete: boolean;
 }
@@ -461,6 +470,186 @@ export interface ModerationInput {
   reason: string;
 }
 
+export type CommerceCheckoutInputKind = typeof CommerceCheckoutInputKind[keyof typeof CommerceCheckoutInputKind];
+
+
+export const CommerceCheckoutInputKind = {
+  marketplace: 'marketplace',
+  premium: 'premium',
+} as const;
+
+export interface CommerceCheckoutInput {
+  kind: CommerceCheckoutInputKind;
+  /** @minimum 1 */
+  listingId?: number;
+}
+
+export interface CommerceUnavailable {
+  error: string;
+}
+
+export type CommerceAccountChoiceAccountType = typeof CommerceAccountChoiceAccountType[keyof typeof CommerceAccountChoiceAccountType];
+
+
+export const CommerceAccountChoiceAccountType = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export interface CommerceAccountChoice {
+  accountType: CommerceAccountChoiceAccountType;
+}
+
+export type CommerceRoleChangeAccountType = typeof CommerceRoleChangeAccountType[keyof typeof CommerceRoleChangeAccountType];
+
+
+export const CommerceRoleChangeAccountType = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export interface CommerceRoleChange {
+  accountType: CommerceRoleChangeAccountType;
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export interface CommerceLaunchChange {
+  /** @nullable */
+  publicLaunchAt: string | null;
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export interface CommerceLaunch {
+  /** @nullable */
+  publicLaunchAt: string | null;
+  /** @nullable */
+  premiumEligibleAt: string | null;
+  timezone: string;
+  paymentsEnabled: boolean;
+  escrowEnabled: boolean;
+}
+
+export type CommercePremiumStatus = typeof CommercePremiumStatus[keyof typeof CommercePremiumStatus];
+
+
+export const CommercePremiumStatus = {
+  launch_unconfigured: 'launch_unconfigured',
+  waiting: 'waiting',
+  payment_unavailable: 'payment_unavailable',
+} as const;
+
+export interface CommercePremium {
+  status: CommercePremiumStatus;
+  /** @nullable */
+  eligibleAt: string | null;
+  priceMinor: number;
+  currency: string;
+  checkoutEnabled: boolean;
+  explanation: string;
+}
+
+export interface CommerceOrder {
+  id: string;
+  kind: string;
+  amountMinor: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+}
+
+export type CommerceAccountAccountType = typeof CommerceAccountAccountType[keyof typeof CommerceAccountAccountType];
+
+
+export const CommerceAccountAccountType = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export interface CommerceAccount {
+  accountType: CommerceAccountAccountType;
+  sellerListingCount: number;
+  orders: CommerceOrder[];
+  premium: CommercePremium | null;
+  launch: CommerceLaunch;
+}
+
+export type CommerceUserAccountType = typeof CommerceUserAccountType[keyof typeof CommerceUserAccountType];
+
+
+export const CommerceUserAccountType = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export interface CommerceUser {
+  id: string;
+  displayName: string;
+  /** @nullable */
+  username: string | null;
+  accountType: CommerceUserAccountType;
+  suspended: boolean;
+  /** @nullable */
+  universityName: string | null;
+  createdAt: string;
+}
+
+export interface CommerceTotals {
+  users: number;
+  buyers: number;
+  sellers: number;
+  suspended: number;
+  today: number;
+  week: number;
+  month: number;
+}
+
+export interface CommerceFinance {
+  verifiedMarketplaceMinor: number;
+  marketplaceRefundsMinor: number;
+  premiumRevenueMinor: number;
+  /** @nullable */
+  processingFeesMinor: number | null;
+  /** @nullable */
+  platformEarningsMinor: number | null;
+  pending: number;
+  failed: number;
+  cancelled: number;
+  disputed: number;
+  refunded: number;
+  paymentsEnabled: boolean;
+  escrowEnabled: boolean;
+}
+
+export interface CommerceTrend {
+  date: string;
+  count: number;
+}
+
+export interface CommerceUniversity {
+  name: string;
+  count: number;
+}
+
+export interface CommerceAdmin {
+  totals: CommerceTotals;
+  users: CommerceUser[];
+  total: number;
+  page: number;
+  pageSize: number;
+  trends: CommerceTrend[];
+  universities: CommerceUniversity[];
+  launch: CommerceLaunch;
+  finance: CommerceFinance;
+}
+
 export interface SocialAction {
   message: string;
 }
@@ -647,6 +836,47 @@ export interface AdminReportPage {
   page: number;
   pageSize: number;
 }
+
+export type GetCommerceAdminParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+accountType?: GetCommerceAdminAccountType;
+/**
+ * @minimum 1
+ */
+universityId?: number;
+suspended?: GetCommerceAdminSuspended;
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+from?: string;
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+to?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+};
+
+export type GetCommerceAdminAccountType = typeof GetCommerceAdminAccountType[keyof typeof GetCommerceAdminAccountType];
+
+
+export const GetCommerceAdminAccountType = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export type GetCommerceAdminSuspended = typeof GetCommerceAdminSuspended[keyof typeof GetCommerceAdminSuspended];
+
+
+export const GetCommerceAdminSuspended = {
+  true: 'true',
+  false: 'false',
+} as const;
 
 export type SearchPeopleParams = {
 /**

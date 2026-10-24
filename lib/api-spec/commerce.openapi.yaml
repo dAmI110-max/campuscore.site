@@ -1,0 +1,224 @@
+openapi: 3.1.0
+info: {title: Commerce, version: 1.0.0}
+paths:
+  /commerce/account:
+    get:
+      operationId: getCommerceAccount
+      responses:
+        "200":
+          description: Private buyer or seller account
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceAccount"}
+    put:
+      operationId: chooseCommerceAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CommerceAccountChoice"}
+      responses:
+        "200":
+          description: Account choice saved
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceAccount"}
+  /commerce/checkout:
+    post:
+      operationId: startCommerceCheckout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CommerceCheckoutInput"}
+      responses:
+        "503":
+          description: Payment and escrow integration unavailable; no checkout created
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceUnavailable"}
+  /admin/commerce:
+    get:
+      operationId: getCommerceAdmin
+      parameters:
+        - {name: q, in: query, schema: {type: string, maxLength: 100}}
+        - {name: accountType, in: query, schema: {type: string, enum: [buyer, seller]}}
+        - {name: universityId, in: query, schema: {type: integer, minimum: 1}}
+        - {name: suspended, in: query, schema: {type: string, enum: ["true", "false"]}}
+        - {name: from, in: query, schema: {type: string, pattern: '^\d{4}-\d{2}-\d{2}$'}}
+        - {name: to, in: query, schema: {type: string, pattern: '^\d{4}-\d{2}-\d{2}$'}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+      responses:
+        "200":
+          description: Actual filtered database analytics
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceAdmin"}
+  /admin/commerce/accounts/{id}:
+    put:
+      operationId: manageCommerceAccount
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, minLength: 1}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CommerceRoleChange"}
+      responses:
+        "200":
+          description: Commerce permission updated, staff authority unchanged
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceUser"}
+  /admin/commerce/launch:
+    put:
+      operationId: setCommerceLaunch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CommerceLaunchChange"}
+      responses:
+        "200":
+          description: Audited launch correction
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceLaunch"}
+components:
+  schemas:
+    CommerceCheckoutInput:
+      type: object
+      additionalProperties: false
+      required: [kind]
+      properties:
+        kind: {type: string, enum: [marketplace, premium]}
+        listingId: {type: integer, minimum: 1}
+    CommerceUnavailable:
+      type: object
+      required: [error]
+      properties:
+        error: {type: string}
+    CommerceAccountChoice:
+      type: object
+      additionalProperties: false
+      required: [accountType]
+      properties:
+        accountType: {type: string, enum: [buyer, seller]}
+    CommerceRoleChange:
+      type: object
+      additionalProperties: false
+      required: [accountType, reason]
+      properties:
+        accountType: {type: string, enum: [buyer, seller]}
+        reason: {type: string, minLength: 10, maxLength: 1000}
+    CommerceLaunchChange:
+      type: object
+      additionalProperties: false
+      required: [publicLaunchAt, reason]
+      properties:
+        publicLaunchAt: {type: [string, "null"]}
+        reason: {type: string, minLength: 10, maxLength: 1000}
+    CommerceLaunch:
+      type: object
+      required: [publicLaunchAt, premiumEligibleAt, timezone, paymentsEnabled, escrowEnabled]
+      properties:
+        publicLaunchAt: {type: [string, "null"]}
+        premiumEligibleAt: {type: [string, "null"]}
+        timezone: {type: string}
+        paymentsEnabled: {type: boolean}
+        escrowEnabled: {type: boolean}
+    CommercePremium:
+      type: object
+      required: [status, eligibleAt, priceMinor, currency, checkoutEnabled, explanation]
+      properties:
+        status: {type: string, enum: [launch_unconfigured, waiting, payment_unavailable]}
+        eligibleAt: {type: [string, "null"]}
+        priceMinor: {type: integer}
+        currency: {type: string}
+        checkoutEnabled: {type: boolean}
+        explanation: {type: string}
+    CommerceOrder:
+      type: object
+      required: [id, kind, amountMinor, currency, status, createdAt]
+      properties:
+        id: {type: string}
+        kind: {type: string}
+        amountMinor: {type: integer}
+        currency: {type: string}
+        status: {type: string}
+        createdAt: {type: string}
+    CommerceAccount:
+      type: object
+      required: [accountType, sellerListingCount, orders, premium, launch]
+      properties:
+        accountType: {type: string, enum: [buyer, seller]}
+        sellerListingCount: {type: integer}
+        orders: {type: array, items: {$ref: "#/components/schemas/CommerceOrder"}}
+        premium:
+          oneOf:
+            - {$ref: "#/components/schemas/CommercePremium"}
+            - {type: "null"}
+        launch: {$ref: "#/components/schemas/CommerceLaunch"}
+    CommerceUser:
+      type: object
+      required: [id, displayName, username, accountType, suspended, universityName, createdAt]
+      properties:
+        id: {type: string}
+        displayName: {type: string}
+        username: {type: [string, "null"]}
+        accountType: {type: string, enum: [buyer, seller]}
+        suspended: {type: boolean}
+        universityName: {type: [string, "null"]}
+        createdAt: {type: string}
+    CommerceTotals:
+      type: object
+      required: [users, buyers, sellers, suspended, today, week, month]
+      properties:
+        users: {type: integer}
+        buyers: {type: integer}
+        sellers: {type: integer}
+        suspended: {type: integer}
+        today: {type: integer}
+        week: {type: integer}
+        month: {type: integer}
+    CommerceFinance:
+      type: object
+      required: [verifiedMarketplaceMinor, marketplaceRefundsMinor, premiumRevenueMinor, processingFeesMinor, platformEarningsMinor, pending, failed, cancelled, disputed, refunded, paymentsEnabled, escrowEnabled]
+      properties:
+        verifiedMarketplaceMinor: {type: integer}
+        marketplaceRefundsMinor: {type: integer}
+        premiumRevenueMinor: {type: integer}
+        processingFeesMinor: {type: [integer, "null"]}
+        platformEarningsMinor: {type: [integer, "null"]}
+        pending: {type: integer}
+        failed: {type: integer}
+        cancelled: {type: integer}
+        disputed: {type: integer}
+        refunded: {type: integer}
+        paymentsEnabled: {type: boolean}
+        escrowEnabled: {type: boolean}
+    CommerceTrend:
+      type: object
+      required: [date, count]
+      properties:
+        date: {type: string}
+        count: {type: integer}
+    CommerceUniversity:
+      type: object
+      required: [name, count]
+      properties:
+        name: {type: string}
+        count: {type: integer}
+    CommerceAdmin:
+      type: object
+      required: [totals, users, total, page, pageSize, trends, universities, launch, finance]
+      properties:
+        totals: {$ref: "#/components/schemas/CommerceTotals"}
+        users: {type: array, items: {$ref: "#/components/schemas/CommerceUser"}}
+        total: {type: integer}
+        page: {type: integer}
+        pageSize: {type: integer}
+        trends: {type: array, items: {$ref: "#/components/schemas/CommerceTrend"}}
+        universities: {type: array, items: {$ref: "#/components/schemas/CommerceUniversity"}}
+        launch: {$ref: "#/components/schemas/CommerceLaunch"}
+        finance: {$ref: "#/components/schemas/CommerceFinance"}

@@ -17,7 +17,7 @@ export default defineConfig({
   "api-client-react": {
     input: {
       target: "./openapi.yaml",
-      parserOptions: { externalRefs: { allow: ["./social.openapi.yaml"] } },
+      parserOptions: { externalRefs: { allow: ["./social.openapi.yaml", "./commerce.openapi.yaml"] } },
       override: {
         transformer: titleTransformer,
       },
@@ -45,7 +45,7 @@ export default defineConfig({
   zod: {
     input: {
       target: "./openapi.yaml",
-      parserOptions: { externalRefs: { allow: ["./social.openapi.yaml"] } },
+      parserOptions: { externalRefs: { allow: ["./social.openapi.yaml", "./commerce.openapi.yaml"] } },
       override: {
         transformer: titleTransformer,
       },

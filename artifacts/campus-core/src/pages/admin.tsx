@@ -37,7 +37,7 @@ export default function Admin() {
   return (
     <div>
       <PageHeader eyebrow="Administration" title="Moderation desk">Every action needs a reason and is recorded in the audit log.</PageHeader>
-      <div className="mb-4"><Button asChild variant="outline" size="sm"><Link href="/admin/access" data-testid="link-staff-access"><KeyRound className="mr-2 h-4 w-4" />Staff access</Link></Button> <Button asChild variant="outline" size="sm"><Link href="/admin/safety" data-testid="link-safety-reports"><ShieldCheck className="mr-2 h-4 w-4" />Safety reports</Link></Button></div>
+      <div className="mb-4"><Button asChild variant="outline" size="sm"><Link href="/admin/access" data-testid="link-staff-access"><KeyRound className="mr-2 h-4 w-4" />Staff access</Link></Button> <Button asChild variant="outline" size="sm"><Link href="/admin/safety" data-testid="link-safety-reports"><ShieldCheck className="mr-2 h-4 w-4" />Safety reports</Link></Button> <Button asChild variant="outline" size="sm"><Link href="/admin/commerce" data-testid="link-admin-commerce">Commerce</Link></Button></div>
       <Tabs defaultValue="reports">
         <TabsList className="mb-4 flex h-auto flex-wrap justify-start">
           <TabsTrigger value="reports" data-testid="tab-reports">Reports ({data.reports.length})</TabsTrigger>

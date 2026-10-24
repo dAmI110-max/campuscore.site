@@ -12,6 +12,7 @@ import { academicEntry, ownedImages, safeLink } from "../lib/validation";
 import { HttpError } from "../lib/errors";
 import { listingById, listingsQuery, published, wireListing } from "../lib/listing-service";
 import { escapedSearch } from "../lib/social";
+import { requireMarketplaceSeller } from "../lib/commerce";
 
 const router: IRouter = Router();
 router.get("/summary", async (_req, res): Promise<void> => {
@@ -66,7 +67,11 @@ router.post("/listings", async (req, res): Promise<void> => {
   const user = await account(req, true);
   const body = CreateListingBody.parse(req.body);
   await validateListing(body, user.id);
-  const [row] = await db.insert(l).values({ ...body, title: body.title.trim(), ownerId: user.id }).returning({ id: l.id });
+  const row = await db.transaction(async tx => {
+    await requireMarketplaceSeller(tx, user.id, body.kind);
+    const [created] = await tx.insert(l).values({ ...body, title: body.title.trim(), ownerId: user.id }).returning({ id: l.id });
+    return created;
+  });
   res.status(201).json(CreateListingResponse.parse(await listingById(row.id, user.id)));
 });
 router.get("/listings/:id", async (req, res): Promise<void> => {
@@ -84,8 +89,12 @@ router.put("/listings/:id", async (req, res): Promise<void> => {
   const { id } = UpdateListingParams.parse(req.params);
   const body = UpdateListingBody.parse(req.body);
   await validateListing(body, user.id);
-  const [row] = await db.update(l).set({ ...body, title: body.title.trim(), verified: false, updatedAt: new Date() })
-    .where(and(eq(l.id, id), eq(l.ownerId, user.id), isNull(l.deletedAt))).returning({ id: l.id });
+  const row = await db.transaction(async tx => {
+    await requireMarketplaceSeller(tx, user.id, body.kind);
+    const [updated] = await tx.update(l).set({ ...body, title: body.title.trim(), verified: false, updatedAt: new Date() })
+      .where(and(eq(l.id, id), eq(l.ownerId, user.id), isNull(l.deletedAt))).returning({ id: l.id });
+    return updated;
+  });
   if (!row) throw new HttpError(404, "You can only edit your own existing listings.");
   res.json(UpdateListingResponse.parse(await listingById(id, user.id)));
 });
