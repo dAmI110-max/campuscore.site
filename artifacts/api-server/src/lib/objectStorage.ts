@@ -12,23 +12,54 @@ import {
 
 const REPLIT_SIDECAR_ENDPOINT = 'http://127.0.0.1:1106';
 
-export const objectStorageClient = new Storage({
-  credentials: {
-    audience: 'replit',
-    subject_token_type: 'access_token',
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: 'external_account',
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: 'json',
-        subject_token_field_name: 'access_token',
+function createObjectStorageClient(): Storage {
+  if (process.env.REPL_ID !== undefined) {
+    return new Storage({
+      credentials: {
+        audience: 'replit',
+        subject_token_type: 'access_token',
+        token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+        type: 'external_account',
+        credential_source: {
+          url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+          format: {
+            type: 'json',
+            subject_token_field_name: 'access_token',
+          },
+        },
+        universe_domain: 'googleapis.com',
       },
+      projectId: '',
+    });
+  }
+
+  const rawCredentials = process.env.GCS_CREDENTIALS_JSON;
+  if (!rawCredentials) return new Storage();
+
+  let credentials: {
+    project_id?: string;
+    client_email?: string;
+    private_key?: string;
+  };
+  try {
+    credentials = JSON.parse(rawCredentials);
+  } catch {
+    throw new Error('GCS_CREDENTIALS_JSON must contain valid Google service-account JSON.');
+  }
+  if (!credentials.project_id || !credentials.client_email || !credentials.private_key) {
+    throw new Error('GCS_CREDENTIALS_JSON must include project_id, client_email and private_key.');
+  }
+
+  return new Storage({
+    projectId: credentials.project_id,
+    credentials: {
+      client_email: credentials.client_email,
+      private_key: credentials.private_key,
     },
-    universe_domain: 'googleapis.com',
-  },
-  projectId: '',
-});
+  });
+}
+
+export const objectStorageClient = createObjectStorageClient();
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -243,6 +274,16 @@ async function signObjectURL({
   method: 'GET' | 'PUT' | 'DELETE' | 'HEAD';
   ttlSec: number;
 }): Promise<string> {
+  if (process.env.REPL_ID === undefined) {
+    const action = method === 'PUT' ? 'write' : method === 'GET' || method === 'HEAD' ? 'read' : 'delete';
+    const [url] = await objectStorageClient.bucket(bucketName).file(objectName).getSignedUrl({
+      version: 'v4',
+      action,
+      expires: Date.now() + ttlSec * 1000,
+    });
+    return url;
+  }
+
   const request = {
     bucket_name: bucketName,
     object_name: objectName,

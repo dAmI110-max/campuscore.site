@@ -1,4 +1,7 @@
 import express, { type Express, type ErrorRequestHandler } from "express";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import pinoHttp from "pino-http";
 import helmet from "helmet";
 import { ipKeyGenerator, rateLimit } from "express-rate-limit";
@@ -59,6 +62,30 @@ app.use("/api", (req, res, next) => {
 
 app.use("/api", router);
 app.use("/api", (_req, res) => { res.status(404).json({ error: "Endpoint not found." }); });
+
+const webRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../campus-core/dist/public",
+);
+const webIndex = path.join(webRoot, "index.html");
+
+if (process.env.NODE_ENV === "production" && !existsSync(webIndex)) {
+  throw new Error("Campus Core web build is missing. Run the repository Railway build before starting the API.");
+}
+
+if (existsSync(webIndex)) {
+  app.use(express.static(webRoot, { index: false }));
+  app.get(/^(?!\/api(?:\/|$)).*/, (req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      next();
+      return;
+    }
+    res.sendFile(webIndex, (err) => {
+      if (err) next(err);
+    });
+  });
+}
+
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof HttpError) { res.status(err.status).json({ error: err.message }); return; }
   if (err instanceof ObjectNotFoundError) { res.status(404).json({ error: "Uploaded file not found. Try uploading again." }); return; }

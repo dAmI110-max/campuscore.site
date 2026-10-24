@@ -268,6 +268,8 @@ After verification, both temporary Clerk identities, their application profiles,
 
 ## Production publishing procedure
 
+For the Railway architecture, service configuration, environment variables, data migration and cutover gates, see [Railway deployment](RAILWAY-DEPLOYMENT.md). The procedure below remains specific to publishing through Replit.
+
 1. Complete the launch-blocker checklist above; verify the owner's real development account and administrator access.
 2. Run the documented typecheck, tests and production builds; review diff and generated SQL schema history.
 3. Open Publish and select a server-capable deployment for the API plus the static web service. Existing artifact production definitions provide build/run settings. Do not deploy only the static frontend. **Do not populate production with development user data:** Clerk accounts are separate, and copying development role/profile rows would copy invalid development identities and the owner binding.

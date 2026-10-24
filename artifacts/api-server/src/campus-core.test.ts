@@ -1,6 +1,7 @@
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import express from "express";
 import { pool } from "@workspace/db";
 import { normalizeUsername, usernameError, safeLink, academicEntry } from "./lib/validation";
 import { sanitizeImage } from "./lib/image-safety";
@@ -8,9 +9,31 @@ import { validateStaffTarget, applyStaffRole, staffTransaction } from "./lib/sta
 import { db, profilesTable as profiles, accessRequestsTable, auditTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
+import healthRouter from "./routes/health";
 
 const base = "http://localhost:80/api";
+const healthApp = express();
+healthApp.use(healthRouter);
 after(async () => { await pool.end(); });
+
+test("Railway health check confirms the database is reachable", async () => {
+  const server = healthApp.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve, reject) => {
+    server.once("listening", resolve);
+    server.once("error", reject);
+  });
+  try {
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const response = await fetch(`http://127.0.0.1:${address.port}/healthz`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "ok" });
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close(error => error ? reject(error) : resolve());
+    });
+  }
+});
 
 test("Username normalization is case-insensitive", () => {
   assert.equal(normalizeUsername("  Student_Name  "), "student_name");

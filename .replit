@@ -19,10 +19,6 @@ expertMode = true
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
 
-[userenv]
-
-[userenv.shared]
-PLATFORM_OWNER_EMAIL = "bhadmusoluwadamilare@gmail.com"
 
 [nix]
 channel = "stable-25_05"
