@@ -488,6 +488,74 @@ export interface CommerceUnavailable {
   error: string;
 }
 
+export type CommerceCheckoutMode = typeof CommerceCheckoutMode[keyof typeof CommerceCheckoutMode];
+
+
+export const CommerceCheckoutMode = {
+  test: 'test',
+  live: 'live',
+} as const;
+
+export interface CommerceCheckout {
+  orderId: string;
+  reference: string;
+  authorizationUrl: string;
+  mode: CommerceCheckoutMode;
+}
+
+export interface CommerceCheckoutVerificationInput {
+  /**
+     * @minLength 8
+     * @maxLength 100
+     * @pattern ^[A-Za-z0-9.=-]+$
+     */
+  reference: string;
+}
+
+export type CommerceCheckoutVerificationKind = typeof CommerceCheckoutVerificationKind[keyof typeof CommerceCheckoutVerificationKind];
+
+
+export const CommerceCheckoutVerificationKind = {
+  marketplace: 'marketplace',
+  premium: 'premium',
+} as const;
+
+export type CommerceCheckoutVerificationStatus = typeof CommerceCheckoutVerificationStatus[keyof typeof CommerceCheckoutVerificationStatus];
+
+
+export const CommerceCheckoutVerificationStatus = {
+  pending: 'pending',
+  paid: 'paid',
+} as const;
+
+export type CommerceCheckoutVerificationCurrency = typeof CommerceCheckoutVerificationCurrency[keyof typeof CommerceCheckoutVerificationCurrency];
+
+
+export const CommerceCheckoutVerificationCurrency = {
+  NGN: 'NGN',
+} as const;
+
+export type CommerceCheckoutVerificationMode = typeof CommerceCheckoutVerificationMode[keyof typeof CommerceCheckoutVerificationMode];
+
+
+export const CommerceCheckoutVerificationMode = {
+  test: 'test',
+  live: 'live',
+} as const;
+
+export interface CommerceCheckoutVerification {
+  orderId: string;
+  kind: CommerceCheckoutVerificationKind;
+  status: CommerceCheckoutVerificationStatus;
+  amountMinor: number;
+  currency: CommerceCheckoutVerificationCurrency;
+  mode: CommerceCheckoutVerificationMode;
+  /** @nullable */
+  verifiedAt: string | null;
+  /** @nullable */
+  premiumUntil: string | null;
+}
+
 export type CommerceAccountChoiceAccountType = typeof CommerceAccountChoiceAccountType[keyof typeof CommerceAccountChoiceAccountType];
 
 
@@ -527,6 +595,15 @@ export interface CommerceLaunchChange {
   reason: string;
 }
 
+export type CommerceLaunchCheckoutMode = typeof CommerceLaunchCheckoutMode[keyof typeof CommerceLaunchCheckoutMode];
+
+
+export const CommerceLaunchCheckoutMode = {
+  disabled: 'disabled',
+  test: 'test',
+  live: 'live',
+} as const;
+
 export interface CommerceLaunch {
   /** @nullable */
   publicLaunchAt: string | null;
@@ -535,6 +612,7 @@ export interface CommerceLaunch {
   timezone: string;
   paymentsEnabled: boolean;
   escrowEnabled: boolean;
+  checkoutMode: CommerceLaunchCheckoutMode;
 }
 
 export type CommercePremiumStatus = typeof CommercePremiumStatus[keyof typeof CommercePremiumStatus];
@@ -544,17 +622,41 @@ export const CommercePremiumStatus = {
   launch_unconfigured: 'launch_unconfigured',
   waiting: 'waiting',
   payment_unavailable: 'payment_unavailable',
+  ready: 'ready',
+  active: 'active',
+  expired: 'expired',
+} as const;
+
+export type CommercePremiumCheckoutMode = typeof CommercePremiumCheckoutMode[keyof typeof CommercePremiumCheckoutMode];
+
+
+export const CommercePremiumCheckoutMode = {
+  disabled: 'disabled',
+  test: 'test',
+  live: 'live',
 } as const;
 
 export interface CommercePremium {
   status: CommercePremiumStatus;
   /** @nullable */
   eligibleAt: string | null;
+  /** @nullable */
+  premiumUntil: string | null;
   priceMinor: number;
   currency: string;
   checkoutEnabled: boolean;
+  checkoutMode: CommercePremiumCheckoutMode;
   explanation: string;
 }
+
+export type CommerceOrderMode = typeof CommerceOrderMode[keyof typeof CommerceOrderMode];
+
+
+export const CommerceOrderMode = {
+  disabled: 'disabled',
+  test: 'test',
+  live: 'live',
+} as const;
 
 export interface CommerceOrder {
   id: string;
@@ -562,6 +664,7 @@ export interface CommerceOrder {
   amountMinor: number;
   currency: string;
   status: string;
+  mode: CommerceOrderMode;
   createdAt: string;
 }
 

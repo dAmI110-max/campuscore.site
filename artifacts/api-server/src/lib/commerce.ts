@@ -1,9 +1,10 @@
 import { db, profilesTable as p, listingsTable as l, platformCommerceTable, commerceOrdersTable as orders, auditTable, directoryTable as d, type Profile } from "@workspace/db";
-import { and, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import { HttpError } from "./errors";
+import { getPaystackRuntime, type CheckoutMode } from "./paystack";
 
 export const PREMIUM_PRICE_MINOR = 200_000;
-export const PAYMENT_UNAVAILABLE = "Checkout is disabled. Merchant eligibility, verified payments and a compliant escrow funds-holding and delayed-release arrangement are not implemented.";
+export const PAYMENT_UNAVAILABLE = "Checkout is disabled by configuration. Verify provider readiness before enabling payments; marketplace live checkout remains blocked until compliant escrow is confirmed and implemented.";
 
 /** Calendar months in Africa/Lagos, not 60 days, registration age or deployment age. */
 export function premiumEligibility(launch: Date | null): Date | null {
@@ -20,30 +21,74 @@ export function premiumEligibility(launch: Date | null): Date | null {
 export async function commerceLaunch() {
   const [settings] = await db.select().from(platformCommerceTable).where(eq(platformCommerceTable.id, 1));
   const launch = settings?.publicLaunchAt ?? null;
+  const checkoutMode = getPaystackRuntime().mode;
   return {
     publicLaunchAt: launch?.toISOString() ?? null,
     premiumEligibleAt: premiumEligibility(launch)?.toISOString() ?? null,
     timezone: "Africa/Lagos",
-    // Intentionally not env toggles: credentials alone cannot approve genuine escrow.
-    paymentsEnabled: false, escrowEnabled: false,
+    paymentsEnabled: checkoutMode === "live", escrowEnabled: false,
+    checkoutMode,
   };
 }
 
-export function sellerPremium(role: string, eligibleAt: string | null, now = new Date()) {
+export function addLagosCalendarMonth(instant: Date): Date {
+  const local = new Date(instant.getTime() + 3_600_000);
+  const day = local.getUTCDate();
+  local.setUTCDate(1);
+  local.setUTCMonth(local.getUTCMonth() + 1);
+  const monthEnd = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 0)).getUTCDate();
+  local.setUTCDate(Math.min(day, monthEnd));
+  return new Date(local.getTime() - 3_600_000);
+}
+
+export function sellerPremium(
+  role: string,
+  eligibleAt: string | null,
+  now = new Date(),
+  premiumUntil: Date | null = null,
+  checkoutMode: CheckoutMode = "disabled",
+) {
   if (role !== "seller") return null;
+  const active = premiumUntil !== null && premiumUntil > now;
+  const expired = premiumUntil !== null && premiumUntil <= now;
+  const status = active ? "active"
+    : !eligibleAt ? "launch_unconfigured"
+      : now < new Date(eligibleAt) ? "waiting"
+        : checkoutMode === "disabled" ? expired ? "expired" : "payment_unavailable"
+          : expired ? "expired" : "ready";
   return {
-    status: !eligibleAt ? "launch_unconfigured" : now < new Date(eligibleAt) ? "waiting" : "payment_unavailable",
-    eligibleAt, priceMinor: PREMIUM_PRICE_MINOR, currency: "NGN", checkoutEnabled: false,
-    explanation: !eligibleAt
+    status,
+    eligibleAt,
+    premiumUntil: active ? premiumUntil!.toISOString() : null,
+    priceMinor: PREMIUM_PRICE_MINOR,
+    currency: "NGN",
+    checkoutEnabled: status === "ready" && checkoutMode !== "disabled",
+    checkoutMode,
+    explanation: active
+      ? "Seller Premium is active. Renewal is manual; access expires at the date shown."
+      : !eligibleAt
       ? "Premium is disabled until the official public launch date is explicitly configured. Ordinary selling remains free."
       : now < new Date(eligibleAt)
         ? "Premium becomes eligible two calendar months after the official public launch. Ordinary selling remains free."
-        : "The launch waiting period has ended, but subscriptions remain disabled until payment and escrow readiness is confirmed. No Premium access has been activated.",
+        : status === "expired"
+          ? "The previous Premium period has ended. Renewal is manual; ordinary seller features remain free."
+          : checkoutMode === "test"
+            ? "Only Paystack test checkout is configured. A test transaction does not activate production Premium access."
+            : checkoutMode === "live"
+              ? "Checkout is available. Premium access starts only after server-side Paystack verification."
+              : "The launch waiting period has ended, but checkout is disabled until Paystack is configured and tested. No Premium access has been activated.",
   };
 }
 
 export async function commerceAccount(user: Profile) {
   const launch = await commerceLaunch();
+  const latestPremium = user.commerceRole === "seller"
+    ? (await db.select({ verifiedAt: orders.verifiedAt }).from(orders)
+      .where(and(eq(orders.buyerId, user.id), eq(orders.kind, "premium"), eq(orders.provider, "paystack"),
+        eq(orders.status, "paid"), isNotNull(orders.verifiedAt)))
+      .orderBy(desc(orders.verifiedAt)).limit(1))[0]
+    : undefined;
+  const premiumUntil = latestPremium?.verifiedAt ? addLagosCalendarMonth(latestPremium.verifiedAt) : null;
   const [count] = await db.select({ count: sql<number>`count(*)::int` }).from(l)
     .where(and(eq(l.ownerId, user.id), eq(l.kind, "marketplace"), ne(l.status, "unavailable"), isNull(l.deletedAt)));
   const history = await db.select().from(orders)
@@ -51,8 +96,13 @@ export async function commerceAccount(user: Profile) {
     .orderBy(sql`${orders.createdAt} desc`).limit(100);
   return {
     accountType: user.commerceRole, sellerListingCount: count.count,
-    orders: history.map(order => ({ id: order.id, kind: order.kind, amountMinor: order.amountMinor, currency: order.currency, status: order.status, createdAt: order.createdAt.toISOString() })),
-    premium: sellerPremium(user.commerceRole, launch.premiumEligibleAt), launch,
+    orders: history.map(order => ({
+      id: order.id, kind: order.kind, amountMinor: order.amountMinor, currency: order.currency,
+      status: order.status,
+      mode: order.provider === "paystack" ? "live" : order.provider === "paystack_test" ? "test" : "disabled",
+      createdAt: order.createdAt.toISOString(),
+    })),
+    premium: sellerPremium(user.commerceRole, launch.premiumEligibleAt, new Date(), premiumUntil, getPaystackRuntime().mode), launch,
   };
 }
 

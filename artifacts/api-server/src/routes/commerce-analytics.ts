@@ -54,7 +54,8 @@ router.get("/admin/commerce", async (req, res): Promise<void> => {
       name: sql<string>`coalesce(${d.name}, 'University not selected')`, count: sql<number>`count(*)::int`,
     }).from(p).leftJoin(d, eq(p.universityId, d.id)).where(where).groupBy(d.name).orderBy(sql`count(*) desc`).limit(100);
     // Finance uses order dates and parties, not arbitrary client-supplied totals.
-    const financeClauses: SQL[] = [];
+    // Test transactions must never appear as collected revenue or processing fees.
+    const financeClauses: SQL[] = [eq(o.provider, "paystack")];
     if (q.from) financeClauses.push(sql`${o.createdAt} >= (${q.from}::date::timestamp at time zone 'Africa/Lagos')`);
     if (q.to) financeClauses.push(sql`${o.createdAt} < ((${q.to}::date + interval '1 day') at time zone 'Africa/Lagos')`);
     if (q.q || q.accountType || q.universityId || q.suspended) financeClauses.push(sql`exists (select 1 from profiles where (${p.id} = ${o.buyerId} or ${p.id} = ${o.sellerId}) and ${where ?? sql`true`})`);
@@ -72,6 +73,11 @@ router.get("/admin/commerce", async (req, res): Promise<void> => {
     return { totals, users: users.map(user => ({ ...user, createdAt: user.createdAt.toISOString() })), total: totals.users, page, pageSize, trends, universities,
       finance: { ...finance, platformEarningsMinor: null, paymentsEnabled: false, escrowEnabled: false } };
   }, { isolationLevel: "repeatable read", accessMode: "read only" });
-  res.json(GetCommerceAdminResponse.parse({ ...result, launch: await commerceLaunch() }));
+  const launch = await commerceLaunch();
+  res.json(GetCommerceAdminResponse.parse({
+    ...result,
+    launch,
+    finance: { ...result.finance, paymentsEnabled: launch.paymentsEnabled, escrowEnabled: false },
+  }));
 });
 export default router;

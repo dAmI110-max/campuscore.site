@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, Bookmark, BookmarkCheck, CalendarClock, ExternalLink, Flag, MapPin, Pencil, School, Trash2, Phone } from "lucide-react";
-import { useGetListing, getGetListingQueryKey, getListListingsQueryKey, getGetSummaryQueryKey, useToggleSavedListing, useDeleteListing, useCreateReport } from "@workspace/api-client-react";
+import { useGetListing, getGetListingQueryKey, getListListingsQueryKey, getGetSummaryQueryKey, useToggleSavedListing, useDeleteListing, useCreateReport, useGetCommerceAccount, getGetCommerceAccountQueryKey, useStartCommerceCheckout } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +23,8 @@ export default function ListingDetail() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const commerce = useGetCommerceAccount({ query: { queryKey: getGetCommerceAccountQueryKey(), enabled: !!me.signedIn && !!me.profile?.complete } });
+  const checkout = useStartCommerceCheckout();
   const { data: l, isLoading, error, refetch } = useGetListing(id, { query: { enabled: valid, queryKey: getGetListingQueryKey(id) } });
   const toggle = useToggleSavedListing();
   const del = useDeleteListing();
@@ -83,6 +85,14 @@ export default function ListingDetail() {
     });
   }
 
+  function onTestCheckout() {
+    if (needProfile()) return;
+    checkout.mutate({ data: { kind: "marketplace", listingId: id } }, {
+      onSuccess: (result) => window.location.assign(result.authorizationUrl),
+      onError: (error) => toast({ title: "Could not start test checkout", description: errMessage(error), variant: "destructive" }),
+    });
+  }
+
   return (
     <div>
       <Link href={meta.path} className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground" data-testid="link-back"><ArrowLeft className="h-4 w-4" />{meta.label}</Link>
@@ -140,6 +150,15 @@ export default function ListingDetail() {
                 </>
               ) : (
                 <>
+                  {l.kind === "marketplace" && l.status === "published" && l.price !== null && l.price > 0
+                    && commerce.data?.launch.checkoutMode === "test" && me.profile?.id !== l.ownerId && (
+                    <div className="basis-full rounded-xl border border-primary/30 bg-accent/30 p-3">
+                      <p className="mb-2 text-xs text-muted-foreground">Paystack test mode only. No real payment, escrow, or seller payout.</p>
+                      <Button onClick={onTestCheckout} disabled={checkout.isPending} data-testid="button-marketplace-test-checkout">
+                        {checkout.isPending ? "Preparing test checkout…" : "Try test checkout"}
+                      </Button>
+                    </div>
+                  )}
                   <Button variant={l.saved ? "secondary" : "default"} onClick={onSave} disabled={toggle.isPending} data-testid="button-save">
                     {l.saved ? <BookmarkCheck className="mr-2 h-4 w-4" /> : <Bookmark className="mr-2 h-4 w-4" />}{l.saved ? "Saved" : "Save"}
                   </Button>

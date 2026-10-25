@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Clock, FileText, Info, Plus, ReceiptText, ShoppingBag, Store } from "lucide-react";
 import {
   useGetCommerceAccount, getGetCommerceAccountQueryKey, useChooseCommerceAccount,
-  getGetProfileQueryKey, getListListingsQueryKey, type CommerceAccount,
+  getGetProfileQueryKey, getListListingsQueryKey, useStartCommerceCheckout, type CommerceAccount,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,9 @@ const PREMIUM_STATUS: Record<string, string> = {
   launch_unconfigured: "Waiting for official launch date",
   waiting: "Not yet eligible",
   payment_unavailable: "Eligible, payments not available yet",
+  ready: "Available",
+  active: "Active",
+  expired: "Expired",
 };
 
 export default function Account() {
@@ -25,6 +28,7 @@ export default function Account() {
   const { toast } = useToast();
   const q = useGetCommerceAccount({ query: { queryKey: getGetCommerceAccountQueryKey(), staleTime: 0, refetchOnMount: "always", refetchInterval: 30_000, refetchIntervalInBackground: false } });
   const choose = useChooseCommerceAccount();
+  const checkout = useStartCommerceCheckout();
 
   function pick(accountType: "buyer" | "seller") {
     choose.mutate({ data: { accountType } }, {
@@ -40,6 +44,13 @@ export default function Account() {
     });
   }
 
+  function startPremiumCheckout() {
+    checkout.mutate({ data: { kind: "premium" } }, {
+      onSuccess: (result) => window.location.assign(result.authorizationUrl),
+      onError: (error) => toast({ title: "Could not start checkout", description: errMessage(error), variant: "destructive" }),
+    });
+  }
+
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader eyebrow="Your account" title="Buying and selling">Choose how you use the marketplace. Sellers can still buy from other students.</PageHeader>
@@ -48,13 +59,19 @@ export default function Account() {
       ) : q.error || !q.data ? (
         <ErrorState error={q.error} onRetry={() => q.refetch()} title="We could not load your account" />
       ) : (
-        <Body acc={q.data} onPick={pick} pending={choose.isPending} />
+        <Body acc={q.data} onPick={pick} pending={choose.isPending} onPremiumCheckout={startPremiumCheckout} checkoutPending={checkout.isPending} />
       )}
     </div>
   );
 }
 
-function Body({ acc, onPick, pending }: { acc: CommerceAccount; onPick: (t: "buyer" | "seller") => void; pending: boolean }) {
+function Body({ acc, onPick, pending, onPremiumCheckout, checkoutPending }: {
+  acc: CommerceAccount;
+  onPick: (t: "buyer" | "seller") => void;
+  pending: boolean;
+  onPremiumCheckout: () => void;
+  checkoutPending: boolean;
+}) {
   const seller = acc.accountType === "seller";
   const blockBuyer = seller && acc.sellerListingCount > 0;
   return (
@@ -98,17 +115,28 @@ function Body({ acc, onPick, pending }: { acc: CommerceAccount; onPick: (t: "buy
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
             <div><dt className="text-muted-foreground">Planned price</dt><dd className="font-mono" data-testid="text-premium-price">{minorMoney(acc.premium.priceMinor, acc.premium.currency)} / month</dd></div>
             <div><dt className="text-muted-foreground">Eligible from</dt><dd data-testid="text-premium-eligible">{acc.premium.eligibleAt ? lagosDateTime(acc.premium.eligibleAt) : "After the official launch date is set"}</dd></div>
-            <div><dt className="text-muted-foreground">Checkout</dt><dd>Not available</dd></div>
+            <div><dt className="text-muted-foreground">Checkout</dt><dd>{acc.premium.checkoutEnabled ? `${acc.premium.checkoutMode} mode` : "Not available"}</dd></div>
           </dl>
+          {acc.premium.premiumUntil && <p className="mt-3 text-sm" data-testid="text-premium-until">Active until {lagosDateTime(acc.premium.premiumUntil)}.</p>}
           <p className="mt-4 text-sm text-muted-foreground" data-testid="text-premium-explanation">{acc.premium.explanation}</p>
-          <p className="mt-2 text-xs text-muted-foreground">Premium becomes eligible two calendar months after the platform's official launch. Nothing can be purchased until payments are configured; you will not be charged.</p>
+          {acc.premium.checkoutEnabled && (
+            <Button className="mt-4" onClick={onPremiumCheckout} disabled={checkoutPending} data-testid="button-premium-checkout">
+              {checkoutPending ? "Preparing secure checkout…" : acc.premium.checkoutMode === "test" ? "Try Paystack test checkout" : "Subscribe with Paystack"}
+            </Button>
+          )}
+          {acc.premium.checkoutMode === "test" && <p className="mt-2 text-xs text-muted-foreground">Test mode only: no real money is collected and a test payment does not activate production Premium.</p>}
+          <p className="mt-2 text-xs text-muted-foreground">Premium eligibility starts two calendar months after the official public launch. Renewal is manual; marketplace escrow and seller payouts remain disabled.</p>
         </section>
       )}
 
       <section className="rounded-2xl border bg-card p-5 sm:p-6" aria-labelledby="orders-h">
         <h2 id="orders-h" className="font-display text-lg font-semibold">Order history</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {acc.launch.paymentsEnabled ? "Recorded payments on your account." : "In-app payments and escrow are not live yet. Arrange any deal directly and meet safely on campus."}
+          {acc.launch.checkoutMode === "test"
+            ? "Paystack test checkouts are available for testing only. They do not collect real money or release seller funds."
+            : acc.launch.paymentsEnabled
+              ? "Verified Premium charges are recorded. Marketplace checkout and escrow remain disabled."
+              : "Marketplace payments and escrow are not live yet. Arrange any deal directly and meet safely on campus."}
         </p>
         <div className="mt-4">
           {!acc.orders.length ? (
@@ -117,7 +145,7 @@ function Body({ acc, onPick, pending }: { acc: CommerceAccount; onPick: (t: "buy
             <ul className="divide-y rounded-xl border">
               {acc.orders.map((o) => (
                 <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm" data-testid={`row-order-${o.id}`}>
-                  <div className="min-w-0"><p className="font-medium capitalize">{o.kind.replace(/_/g, " ")}</p><p className="text-xs text-muted-foreground">{day(o.createdAt)}</p></div>
+                  <div className="min-w-0"><p className="font-medium capitalize">{o.kind.replace(/_/g, " ")}</p><p className="text-xs text-muted-foreground">{o.mode === "test" ? "Paystack test transaction" : o.mode === "live" ? "Paystack payment" : "Recorded order"} · {day(o.createdAt)}</p></div>
                   <div className="text-right"><p className="font-mono">{minorMoney(o.amountMinor, o.currency)}</p><p className="text-xs capitalize text-muted-foreground">{o.status}</p></div>
                 </li>
               ))}

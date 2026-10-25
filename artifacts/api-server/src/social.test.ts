@@ -1,10 +1,11 @@
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
+import { apiBase } from "./test-helpers";
 import { randomUUID } from "node:crypto";
 import { pool } from "@workspace/db";
 
 after(async () => { await pool.end(); });
-const base = "http://localhost:80/api";
+const base = apiBase;
 for (const [method, path, body] of [
   ["GET", "/people"], ["GET", "/social/summary"], ["GET", "/conversations"],
   ["POST", "/conversations", { username: "qa_unknown" }],

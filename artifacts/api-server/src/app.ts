@@ -38,7 +38,15 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: "same-site" } }));
-app.use(express.json({ limit: "128kb", inflate: false }));
+app.use(express.json({
+  limit: "128kb",
+  inflate: false,
+  verify(req, _res, buf) {
+    if (req.url?.split("?")[0] === "/api/commerce/webhooks/paystack") {
+      (req as typeof req & { rawBody?: Buffer }).rawBody = Buffer.from(buf);
+    }
+  },
+}));
 app.use(express.urlencoded({ extended: false, limit: "128kb", inflate: false, parameterLimit: 50 }));
 app.use(clerkMiddleware((req) => ({
   publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),

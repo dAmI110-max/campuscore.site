@@ -10,6 +10,8 @@ paths:
     $ref: "./commerce.openapi.yaml#/paths/~1commerce~1account"
   /commerce/checkout:
     $ref: "./commerce.openapi.yaml#/paths/~1commerce~1checkout"
+  /commerce/checkout/verify:
+    $ref: "./commerce.openapi.yaml#/paths/~1commerce~1checkout~1verify"
   /admin/commerce:
     $ref: "./commerce.openapi.yaml#/paths/~1admin~1commerce"
   /admin/commerce/accounts/{id}:

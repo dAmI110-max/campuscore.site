@@ -5,6 +5,7 @@
  * Campus Core API
  * OpenAPI spec version: 0.1.0
  */
+import type { CommerceOrderMode } from './commerceOrderMode';
 
 export interface CommerceOrder {
   id: string;
@@ -12,5 +13,6 @@ export interface CommerceOrder {
   amountMinor: number;
   currency: string;
   status: string;
+  mode: CommerceOrderMode;
   createdAt: string;
 }

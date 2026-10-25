@@ -32,8 +32,32 @@ paths:
           application/json:
             schema: {$ref: "#/components/schemas/CommerceCheckoutInput"}
       responses:
+        "201":
+          description: Paystack checkout initialized from server-owned order data
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceCheckout"}
         "503":
-          description: Payment and escrow integration unavailable; no checkout created
+          description: Payment provider is disabled or unavailable
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceUnavailable"}
+  /commerce/checkout/verify:
+    post:
+      operationId: verifyCommerceCheckout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CommerceCheckoutVerificationInput"}
+      responses:
+        "200":
+          description: Current order status after provider-side verification
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CommerceCheckoutVerification"}
+        "503":
+          description: Payment provider is disabled or unavailable
           content:
             application/json:
               schema: {$ref: "#/components/schemas/CommerceUnavailable"}
@@ -98,6 +122,32 @@ components:
       required: [error]
       properties:
         error: {type: string}
+    CommerceCheckout:
+      type: object
+      required: [orderId, reference, authorizationUrl, mode]
+      properties:
+        orderId: {type: string}
+        reference: {type: string}
+        authorizationUrl: {type: string, format: uri}
+        mode: {type: string, enum: [test, live]}
+    CommerceCheckoutVerificationInput:
+      type: object
+      additionalProperties: false
+      required: [reference]
+      properties:
+        reference: {type: string, minLength: 8, maxLength: 100, pattern: '^[A-Za-z0-9.=-]+$'}
+    CommerceCheckoutVerification:
+      type: object
+      required: [orderId, kind, status, amountMinor, currency, mode, verifiedAt, premiumUntil]
+      properties:
+        orderId: {type: string}
+        kind: {type: string, enum: [marketplace, premium]}
+        status: {type: string, enum: [pending, paid]}
+        amountMinor: {type: integer}
+        currency: {type: string, enum: [NGN]}
+        mode: {type: string, enum: [test, live]}
+        verifiedAt: {type: [string, "null"], format: date-time}
+        premiumUntil: {type: [string, "null"], format: date-time}
     CommerceAccountChoice:
       type: object
       additionalProperties: false
@@ -120,32 +170,36 @@ components:
         reason: {type: string, minLength: 10, maxLength: 1000}
     CommerceLaunch:
       type: object
-      required: [publicLaunchAt, premiumEligibleAt, timezone, paymentsEnabled, escrowEnabled]
+      required: [publicLaunchAt, premiumEligibleAt, timezone, paymentsEnabled, escrowEnabled, checkoutMode]
       properties:
         publicLaunchAt: {type: [string, "null"]}
         premiumEligibleAt: {type: [string, "null"]}
         timezone: {type: string}
         paymentsEnabled: {type: boolean}
         escrowEnabled: {type: boolean}
+        checkoutMode: {type: string, enum: [disabled, test, live]}
     CommercePremium:
       type: object
-      required: [status, eligibleAt, priceMinor, currency, checkoutEnabled, explanation]
+      required: [status, eligibleAt, premiumUntil, priceMinor, currency, checkoutEnabled, checkoutMode, explanation]
       properties:
-        status: {type: string, enum: [launch_unconfigured, waiting, payment_unavailable]}
+        status: {type: string, enum: [launch_unconfigured, waiting, payment_unavailable, ready, active, expired]}
         eligibleAt: {type: [string, "null"]}
+        premiumUntil: {type: [string, "null"], format: date-time}
         priceMinor: {type: integer}
         currency: {type: string}
         checkoutEnabled: {type: boolean}
+        checkoutMode: {type: string, enum: [disabled, test, live]}
         explanation: {type: string}
     CommerceOrder:
       type: object
-      required: [id, kind, amountMinor, currency, status, createdAt]
+      required: [id, kind, amountMinor, currency, status, mode, createdAt]
       properties:
         id: {type: string}
         kind: {type: string}
         amountMinor: {type: integer}
         currency: {type: string}
         status: {type: string}
+        mode: {type: string, enum: [disabled, test, live]}
         createdAt: {type: string}
     CommerceAccount:
       type: object

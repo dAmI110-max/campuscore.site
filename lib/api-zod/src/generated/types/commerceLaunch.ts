@@ -5,6 +5,7 @@
  * Campus Core API
  * OpenAPI spec version: 0.1.0
  */
+import type { CommerceLaunchCheckoutMode } from './commerceLaunchCheckoutMode';
 
 export interface CommerceLaunch {
   /** @nullable */
@@ -14,4 +15,5 @@ export interface CommerceLaunch {
   timezone: string;
   paymentsEnabled: boolean;
   escrowEnabled: boolean;
+  checkoutMode: CommerceLaunchCheckoutMode;
 }

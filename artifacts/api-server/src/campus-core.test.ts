@@ -1,5 +1,6 @@
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
+import { apiBase } from "./test-helpers";
 import { randomUUID } from "node:crypto";
 import express from "express";
 import { pool } from "@workspace/db";
@@ -11,7 +12,7 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import healthRouter from "./routes/health";
 
-const base = "http://localhost:80/api";
+const base = apiBase;
 const healthApp = express();
 healthApp.use(healthRouter);
 after(async () => { await pool.end(); });

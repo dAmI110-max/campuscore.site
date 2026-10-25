@@ -1,10 +1,12 @@
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
+import { apiBase } from "./test-helpers";
 import { randomUUID } from "node:crypto";
-import { db, pool, profilesTable as p, listingsTable as l, commerceOrdersTable as o, auditTable } from "@workspace/db";
+import { db, pool, profilesTable as p, listingsTable as l, commerceOrdersTable as o, commerceEventsTable as ev, auditTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { premiumEligibility, sellerPremium, PREMIUM_PRICE_MINOR, requirePremiumEligibility, setCommerceRole, requireMarketplaceSeller } from "./lib/commerce";
 import { reconcilePayment, unavailableVerifier, type ExpectedPayment } from "./lib/payment-boundary";
+import { applyVerifiedPaystackPayment } from "./lib/payment-processing";
 import { ChooseCommerceAccountBody, ManageCommerceAccountBody, SetCommerceLaunchBody, StartCommerceCheckoutBody } from "@workspace/api-zod";
 
 after(async () => { await pool.end(); });
@@ -106,12 +108,54 @@ test("DB requires server-verified payment identity, exact Premium amount, valid 
   } finally { await connection.query("ROLLBACK"); connection.release(); }
 });
 test("Private commerce routes and admin analytics reject anonymous requests", async () => {
-  for (const path of ["/commerce/account", "/admin/commerce"]) assert.equal((await fetch(`http://localhost:80/api${path}`)).status, 401);
+  for (const path of ["/commerce/account", "/admin/commerce", "/commerce/checkout", "/commerce/checkout/verify"]) {
+    assert.equal((await fetch(`${apiBase}${path}`, {
+      method: path.endsWith("checkout") || path.endsWith("verify") ? "POST" : "GET",
+      headers: path.endsWith("checkout") || path.endsWith("verify") ? { "Content-Type": "application/json" } : undefined,
+      body: path.endsWith("checkout") ? JSON.stringify({ kind: "premium" }) : path.endsWith("verify") ? JSON.stringify({ reference: "ref-00000000" }) : undefined,
+    })).status, 401);
+  }
 });
-test("Unimplemented webhook never acknowledges forged events or changes financial records", async () => {
+test("Disabled webhook never acknowledges forged events or changes financial records", async () => {
   const [before] = await db.select({ count: sql<number>`count(*)::int` }).from(o);
-  const response = await fetch("http://localhost:80/api/commerce/webhooks/payment", { method: "POST", headers: { "content-type": "application/json", "x-paystack-signature": "forged" }, body: JSON.stringify({ event: "charge.success", data: { amount: 200000, status: "success" } }) });
+  const response = await fetch(`${apiBase}/commerce/webhooks/paystack`, { method: "POST", headers: { "content-type": "application/json", "x-paystack-signature": "forged" }, body: JSON.stringify({ event: "charge.success", data: { amount: 200000, status: "success" } }) });
   assert.equal(response.status, 503);
   const [afterCount] = await db.select({ count: sql<number>`count(*)::int` }).from(o);
   assert.equal(before.count, afterCount.count);
+});
+
+test("Verified payment recording is atomic, idempotent, and rejects event digest conflicts", async () => {
+  const id = randomUUID();
+  const digest = "a".repeat(64);
+  try {
+    await db.transaction(async tx => {
+      await tx.insert(p).values({ id: `pay-test-${id}` });
+      await tx.insert(o).values({
+        id, buyerId: `pay-test-${id}`, kind: "premium", amountMinor: 200000, currency: "NGN",
+        status: "pending", provider: "paystack_test", providerReference: id,
+      });
+      const evidence = { orderId: id, reference: id, amountMinor: 200000, currency: "NGN" as const, environment: "test" as const, status: "success" };
+      const first = await applyVerifiedPaystackPayment(tx, {
+        orderId: id, provider: "paystack_test", eventId: `charge.success:${id}`, digest, evidence,
+      });
+      assert.equal(first.order.status, "paid");
+      assert.equal(first.duplicate, false);
+
+      const replay = await applyVerifiedPaystackPayment(tx, {
+        orderId: id, provider: "paystack_test", eventId: `charge.success:${id}`, digest, evidence,
+      });
+      assert.equal(replay.order.status, "paid");
+      assert.equal(replay.duplicate, true);
+      await assert.rejects(applyVerifiedPaystackPayment(tx, {
+        orderId: id, provider: "paystack_test", eventId: `charge.success:${id}`, digest: "b".repeat(64), evidence,
+      }), /conflicting payment event/);
+
+      const [eventCount] = await tx.select({ count: sql<number>`count(*)::int` }).from(ev)
+        .where(eq(ev.orderId, id));
+      assert.equal(eventCount.count, 1);
+      throw new Error("ROLLBACK_TEST");
+    });
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== "ROLLBACK_TEST") throw error;
+  }
 });

@@ -17,14 +17,17 @@ export const GetCommerceAccountResponse = zod.object({
   "amountMinor": zod.int(),
   "currency": zod.string(),
   "status": zod.string(),
+  "mode": zod.enum(['disabled', 'test', 'live']),
   "createdAt": zod.string()
 })),
   "premium": zod.union([zod.object({
-  "status": zod.enum(['launch_unconfigured', 'waiting', 'payment_unavailable']),
+  "status": zod.enum(['launch_unconfigured', 'waiting', 'payment_unavailable', 'ready', 'active', 'expired']),
   "eligibleAt": zod.string().nullable(),
+  "premiumUntil": zod.coerce.date().nullable(),
   "priceMinor": zod.int(),
   "currency": zod.string(),
   "checkoutEnabled": zod.boolean(),
+  "checkoutMode": zod.enum(['disabled', 'test', 'live']),
   "explanation": zod.string()
 }),zod.null()]),
   "launch": zod.object({
@@ -32,7 +35,8 @@ export const GetCommerceAccountResponse = zod.object({
   "premiumEligibleAt": zod.string().nullable(),
   "timezone": zod.string(),
   "paymentsEnabled": zod.boolean(),
-  "escrowEnabled": zod.boolean()
+  "escrowEnabled": zod.boolean(),
+  "checkoutMode": zod.enum(['disabled', 'test', 'live'])
 })
 })
 
@@ -50,14 +54,17 @@ export const ChooseCommerceAccountResponse = zod.object({
   "amountMinor": zod.int(),
   "currency": zod.string(),
   "status": zod.string(),
+  "mode": zod.enum(['disabled', 'test', 'live']),
   "createdAt": zod.string()
 })),
   "premium": zod.union([zod.object({
-  "status": zod.enum(['launch_unconfigured', 'waiting', 'payment_unavailable']),
+  "status": zod.enum(['launch_unconfigured', 'waiting', 'payment_unavailable', 'ready', 'active', 'expired']),
   "eligibleAt": zod.string().nullable(),
+  "premiumUntil": zod.coerce.date().nullable(),
   "priceMinor": zod.int(),
   "currency": zod.string(),
   "checkoutEnabled": zod.boolean(),
+  "checkoutMode": zod.enum(['disabled', 'test', 'live']),
   "explanation": zod.string()
 }),zod.null()]),
   "launch": zod.object({
@@ -65,7 +72,8 @@ export const ChooseCommerceAccountResponse = zod.object({
   "premiumEligibleAt": zod.string().nullable(),
   "timezone": zod.string(),
   "paymentsEnabled": zod.boolean(),
-  "escrowEnabled": zod.boolean()
+  "escrowEnabled": zod.boolean(),
+  "checkoutMode": zod.enum(['disabled', 'test', 'live'])
 })
 })
 
@@ -78,7 +86,35 @@ export const StartCommerceCheckoutBody = zod.object({
   "listingId": zod.int().min(1).optional()
 })
 
-export const StartCommerceCheckoutResponse = zod.void()
+export const StartCommerceCheckoutResponse = zod.object({
+  "orderId": zod.string(),
+  "reference": zod.string(),
+  "authorizationUrl": zod.url(),
+  "mode": zod.enum(['test', 'live'])
+})
+
+
+export const verifyCommerceCheckoutBodyReferenceMin = 8;
+export const verifyCommerceCheckoutBodyReferenceMax = 100;
+
+
+export const verifyCommerceCheckoutBodyReferenceRegExp = new RegExp('^[A-Za-z0-9.=-]+$');
+
+
+export const VerifyCommerceCheckoutBody = zod.object({
+  "reference": zod.string().min(verifyCommerceCheckoutBodyReferenceMin).max(verifyCommerceCheckoutBodyReferenceMax).regex(verifyCommerceCheckoutBodyReferenceRegExp)
+})
+
+export const VerifyCommerceCheckoutResponse = zod.object({
+  "orderId": zod.string(),
+  "kind": zod.enum(['marketplace', 'premium']),
+  "status": zod.enum(['pending', 'paid']),
+  "amountMinor": zod.int(),
+  "currency": zod.enum(['NGN']),
+  "mode": zod.enum(['test', 'live']),
+  "verifiedAt": zod.coerce.date().nullable(),
+  "premiumUntil": zod.coerce.date().nullable()
+})
 
 
 export const getCommerceAdminQueryQMax = 100;
@@ -135,7 +171,8 @@ export const GetCommerceAdminResponse = zod.object({
   "premiumEligibleAt": zod.string().nullable(),
   "timezone": zod.string(),
   "paymentsEnabled": zod.boolean(),
-  "escrowEnabled": zod.boolean()
+  "escrowEnabled": zod.boolean(),
+  "checkoutMode": zod.enum(['disabled', 'test', 'live'])
 }),
   "finance": zod.object({
   "verifiedMarketplaceMinor": zod.int(),
@@ -197,7 +234,8 @@ export const SetCommerceLaunchResponse = zod.object({
   "premiumEligibleAt": zod.string().nullable(),
   "timezone": zod.string(),
   "paymentsEnabled": zod.boolean(),
-  "escrowEnabled": zod.boolean()
+  "escrowEnabled": zod.boolean(),
+  "checkoutMode": zod.enum(['disabled', 'test', 'live'])
 })
 
 

@@ -4,7 +4,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const names = ["campus-core", "social", "commerce"];
+const apiBase = process.env.API_TEST_BASE_URL ?? "http://localhost:80/api";
+const apiUrl = new URL(apiBase);
+const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+if (!localHosts.has(apiUrl.hostname)
+  && process.env.CAMPUS_CORE_STAGING_CONFIRMATION !== "I_CONFIRM_NON_PRODUCTION_STAGING") {
+  throw new Error("Remote API tests require CAMPUS_CORE_STAGING_CONFIRMATION=I_CONFIRM_NON_PRODUCTION_STAGING.");
+}
+
+const names = ["campus-core", "social", "commerce", "payments"];
 const output = path.join(here, ".test-build");
 await build({
   entryPoints: names.map(name => path.join(here, `src/${name}.test.ts`)),

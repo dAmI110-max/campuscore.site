@@ -5,14 +5,18 @@
  * Campus Core API
  * OpenAPI spec version: 0.1.0
  */
+import type { CommercePremiumCheckoutMode } from './commercePremiumCheckoutMode';
 import type { CommercePremiumStatus } from './commercePremiumStatus';
 
 export interface CommercePremium {
   status: CommercePremiumStatus;
   /** @nullable */
   eligibleAt: string | null;
+  /** @nullable */
+  premiumUntil: Date | null;
   priceMinor: number;
   currency: string;
   checkoutEnabled: boolean;
+  checkoutMode: CommercePremiumCheckoutMode;
   explanation: string;
 }

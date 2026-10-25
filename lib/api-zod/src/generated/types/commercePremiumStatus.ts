@@ -13,4 +13,7 @@ export const CommercePremiumStatus = {
   launch_unconfigured: 'launch_unconfigured',
   waiting: 'waiting',
   payment_unavailable: 'payment_unavailable',
+  ready: 'ready',
+  active: 'active',
+  expired: 'expired',
 } as const;

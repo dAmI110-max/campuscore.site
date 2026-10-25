@@ -229,7 +229,7 @@ function FinancePanel({ f }: { f: CommerceAdmin["finance"] }) {
     <section className="rounded-2xl border bg-card p-4 sm:p-6" aria-labelledby="fin-h">
       <h2 id="fin-h" className="font-display text-lg font-semibold">Finance</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {f.paymentsEnabled ? "Live payments are enabled." : "Live payments are not configured. No money is collected in-app, so recorded amounts reflect only ledger entries."}
+        {f.paymentsEnabled ? "Live Premium payments are enabled. Marketplace checkout and escrow remain disabled." : "Live payments are disabled. No real checkout is available, so amounts reflect only verified records."}
         {" "}{f.escrowEnabled ? "Escrow is enabled." : "Escrow is not available."} This is not a full financial integration.
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-3">
