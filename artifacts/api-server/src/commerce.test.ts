@@ -37,6 +37,17 @@ test("Launch gating checks exact instant, not account registration or elapsed si
   assert.equal(sellerPremium("seller", eligibleAt, new Date(eligibleAt))?.status, "payment_unavailable");
   assert.equal(sellerPremium("seller", eligibleAt, new Date(eligibleAt))?.checkoutEnabled, false);
 });
+test("Premium checkout supports manual renewal after expiry but never charges an active plan", () => {
+  const now = new Date("2027-01-02T00:00:00.000Z");
+  const eligibleAt = "2027-01-01T00:00:00.000Z";
+  assert.equal(sellerPremium("seller", eligibleAt, now, null, "test")?.checkoutEnabled, true);
+  const expired = sellerPremium("seller", eligibleAt, now, new Date("2027-01-01"), "live");
+  assert.equal(expired?.status, "expired");
+  assert.equal(expired?.checkoutEnabled, true);
+  const active = sellerPremium("seller", eligibleAt, now, new Date("2027-02-01"), "live");
+  assert.equal(active?.status, "active");
+  assert.equal(active?.checkoutEnabled, false);
+});
 test("Client input cannot inject staff roles, prices, paid flags or premium privileges", () => {
   assert.equal(ChooseCommerceAccountBody.strict().safeParse({ accountType: "seller", role: "owner" }).success, false);
   assert.equal(ChooseCommerceAccountBody.strict().safeParse({ accountType: "owner" }).success, false);

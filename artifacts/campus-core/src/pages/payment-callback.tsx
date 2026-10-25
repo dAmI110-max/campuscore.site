@@ -27,6 +27,8 @@ export default function PaymentCallback() {
       <section className="rounded-2xl border bg-card p-5 sm:p-6" aria-live="polite">
         {!reference ? (
           <p data-testid="text-payment-callback-error">No payment reference was returned. Check your order history before trying again.</p>
+        ) : me.loading ? (
+          <p data-testid="text-payment-account-loading">Checking your account…</p>
         ) : !me.signedIn ? (
           <div className="space-y-3">
             <p data-testid="text-payment-sign-in">Sign in to the same Campus Core account that started checkout to verify this payment.</p>

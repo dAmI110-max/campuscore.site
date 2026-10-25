@@ -5,3 +5,9 @@
 .local
 .test-build
 generated-artifacts
+
+# Never package local credentials or database exports.
+.env
+.env.*
+!.env.example
+*.dump

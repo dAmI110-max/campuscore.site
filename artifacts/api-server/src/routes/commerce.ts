@@ -77,7 +77,9 @@ router.post("/commerce/checkout", async (req, res): Promise<void> => {
     throw new HttpError(400, "Choose a marketplace listing to purchase.");
   }
 
-  const identity = await clerkClient.users.getUser(user.id);
+  const identity = await clerkClient.users.getUser(user.id).catch(() => {
+    throw new HttpError(503, "The account email could not be verified. Please try again later.");
+  });
   const primaryEmail = identity.emailAddresses.find(email =>
     email.id === identity.primaryEmailAddressId && email.verification?.status === "verified");
   if (!primaryEmail) throw new HttpError(403, "A verified primary email is required for checkout.");
@@ -172,7 +174,14 @@ router.post("/commerce/checkout/verify", async (req, res): Promise<void> => {
 
   let savedOrder = order;
   if (evidence.status === "success") {
-    const digest = createHash("sha256").update(JSON.stringify(evidence)).digest("hex");
+    const digest = createHash("sha256").update(JSON.stringify({
+      orderId: evidence.orderId,
+      reference: evidence.reference,
+      amountMinor: evidence.amountMinor,
+      currency: evidence.currency,
+      environment: evidence.environment,
+      status: evidence.status,
+    })).digest("hex");
     const saved = await db.transaction(tx => applyVerifiedPaystackPayment(tx, {
       orderId: order.id,
       provider,

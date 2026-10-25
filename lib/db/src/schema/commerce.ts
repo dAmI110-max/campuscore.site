@@ -11,8 +11,9 @@ export const platformCommerceTable = pgTable("platform_commerce", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [check("singleton_commerce_settings", sql`${t.id} = 1`)]).enableRLS();
 
-// This ledger is a preparation boundary, not a working payment integration.
-// No public endpoint can mark an order paid, activate Premium or release funds.
+// Only provider-verified payment processing may mark an order paid.
+// Test-mode records are separated from live revenue and Premium entitlements.
+// This ledger does not implement escrow, seller release, or automatic refunds.
 export const commerceOrdersTable = pgTable("commerce_orders", {
   id: text("id").primaryKey(),
   buyerId: text("buyer_id").notNull().references(() => profilesTable.id),

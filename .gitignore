@@ -55,3 +55,9 @@ Thumbs.db
 .local/
 .test-build/
 /generated-artifacts/
+
+# Local credentials and database exports
+.env
+.env.*
+!.env.example
+*.dump

@@ -62,7 +62,7 @@ export function sellerPremium(
     premiumUntil: active ? premiumUntil!.toISOString() : null,
     priceMinor: PREMIUM_PRICE_MINOR,
     currency: "NGN",
-    checkoutEnabled: status === "ready" && checkoutMode !== "disabled",
+    checkoutEnabled: (status === "ready" || status === "expired") && checkoutMode !== "disabled",
     checkoutMode,
     explanation: active
       ? "Seller Premium is active. Renewal is manual; access expires at the date shown."
