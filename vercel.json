@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pnpm install --frozen-lockfile --prod=false",
+  "buildCommand": "pnpm run build:vercel",
+  "outputDirectory": "artifacts/campus-core/dist/public",
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "artifacts/api-server/dist/**",
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    { "src": "^/api(?:/.*)?$", "dest": "/api/index.mjs" },
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/internal/maintenance/uploads", "schedule": "0 3 * * *" }
+  ]
+}

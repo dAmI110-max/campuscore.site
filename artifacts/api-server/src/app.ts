@@ -77,11 +77,12 @@ const webRoot = path.resolve(
 );
 const webIndex = path.join(webRoot, "index.html");
 
-if (process.env.NODE_ENV === "production" && !existsSync(webIndex)) {
+// Vercel serves the Vite output from its CDN, not from the API function.
+if (process.env.VERCEL !== "1" && process.env.NODE_ENV === "production" && !existsSync(webIndex)) {
   throw new Error("Campus Core web build is missing. Run the repository Railway build before starting the API.");
 }
 
-if (existsSync(webIndex)) {
+if (process.env.VERCEL !== "1" && existsSync(webIndex)) {
   app.use(express.static(webRoot, { index: false }));
   app.get(/^(?!\/api(?:\/|$)).*/, (req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") {

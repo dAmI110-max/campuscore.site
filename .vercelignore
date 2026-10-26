@@ -1,0 +1,11 @@
+.git
+.local
+.agents
+**/node_modules
+**/.env
+**/.env.*
+!.env.example
+**/*.dump
+**/.test-build
+**/dist
+generated-artifacts

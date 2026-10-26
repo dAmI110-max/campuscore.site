@@ -12,7 +12,7 @@ if (!localHosts.has(apiUrl.hostname)
   throw new Error("Remote API tests require CAMPUS_CORE_STAGING_CONFIRMATION=I_CONFIRM_NON_PRODUCTION_STAGING.");
 }
 
-const names = ["campus-core", "social", "commerce", "payments"];
+const names = ["campus-core", "social", "commerce", "payments", "vercel"];
 const output = path.join(here, ".test-build");
 await build({
   entryPoints: names.map(name => path.join(here, `src/${name}.test.ts`)),

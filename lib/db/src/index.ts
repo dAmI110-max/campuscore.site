@@ -10,7 +10,17 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ...(process.env.VERCEL === "1" ? {
+    // Shared within a warm function instance; use an external pooled database
+    // endpoint as well, since Vercel may create multiple instances.
+    max: 3,
+    idleTimeoutMillis: 5_000,
+    connectionTimeoutMillis: 10_000,
+    allowExitOnIdle: true,
+  } : {}),
+});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";

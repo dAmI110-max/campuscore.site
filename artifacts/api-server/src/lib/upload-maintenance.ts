@@ -6,13 +6,13 @@ import { logger } from "./logger";
 const storage = new ObjectStorageService();
 let running = false;
 /** Expired staging files only; never remove finalized user content or its metadata. */
-export async function cleanExpiredStagingUploads() {
+export async function cleanExpiredStagingUploads(batchSize = 100) {
   if (running || !process.env.PRIVATE_OBJECT_DIR) return;
   running = true;
   try {
     const cutoff = new Date(Date.now() - 2 * 3600000);
     const rows = await db.select({ objectPath: u.objectPath }).from(u)
-      .where(and(eq(u.complete, false), lt(u.createdAt, cutoff))).limit(100);
+      .where(and(eq(u.complete, false), lt(u.createdAt, cutoff))).limit(batchSize);
     for (const row of rows) {
       try {
         const file = await storage.getObjectEntityFile(row.objectPath);
