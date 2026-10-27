@@ -13,6 +13,10 @@ Use **one Vercel project**, Root Directory **repository root (`.`)**, not either
 | API runtime | Vercel Node Function; Fluid compute recommended |
 | Health check | `/api/healthz` (checks PostgreSQL) |
 | Start command | None: Vercel invokes the function; do not use `pnpm start` |
+| Node.js version | 24.x (matches `engines`) |
+| Environment variable | `ENABLE_EXPERIMENTAL_COREPACK=1` (all environments; see below) |
+
+**pnpm version (required).** `pnpm-workspace.yaml` relies on pnpm 10 settings (`catalog`, `overrides`, `onlyBuiltDependencies`, `minimumReleaseAge`). For a `lockfileVersion: 9.0` lockfile Vercel may select pnpm 9 or 10, and honors `packageManager` (`pnpm@10.26.1`) only when Corepack is enabled with `ENABLE_EXPERIMENTAL_COREPACK=1`. Without it a pnpm 9 install can ignore these settings and fail `--frozen-lockfile` or change dependency resolution. Confirm `pnpm 10.26.1` in the build log. If install still reports a lockfile/config mismatch, regenerate the lockfile locally with pnpm 10.26.1 and review the diff before committing.
 
 The build type-checks shared packages and artifacts, builds the unchanged Vite frontend, then bundles the API's separate serverless entry with the existing esbuild/Pino setup. Workspace TypeScript and project references are resolved before Vercel traces the function. Native Sharp and Google Cloud dependencies remain external and must be included by Vercel's dependency tracing; a hosted preview must verify image finalization and storage access.
 
@@ -94,6 +98,8 @@ pnpm --filter @workspace/api-server run test
 `test:vercel` imports the actual production function on an ephemeral local server. It checks API precedence/config, built frontend assets, DB health, unknown API 404, anonymous authorization, maintenance fail-closed behavior and exact-byte webhook HMAC. It uses a synthetic test key only in its own process, rejects any Paystack API call, does not execute cleanup, and does not write database fixtures. This is not Vercel-hosted routing, deployment tracing, or a real payment test.
 
 The normal API suite also tests cron authentication using injected cleanup stubs, plus existing rollback-only DB constraints/RLS and payment safeguards. It requires the normal local API workflow to be running.
+
+Not proven locally: whether Vercel's own Node runtime leaves the request stream untouched for Express (`config.api.bodyParser` is a Next.js option, not a documented Vercel Node-function option). Verify the exact-byte Paystack HMAC path in a hosted Preview with a synthetic signed body before ever enabling webhooks; keep `PAYMENTS_ENABLED`/webhook flags false until then.
 
 Vercel-hosted Preview verification still requires a Vercel project/environment. Do not deploy or link/pull secrets without permission. Once authorized, verify:
 
