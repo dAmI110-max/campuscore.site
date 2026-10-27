@@ -1,5 +1,6 @@
 - [Campus Core scope](campus-core-scope.md) — real student ecosystem, no fabricated activity, university-agnostic, and explicit launch gates.
 - [Owner governance](owner-governance.md) — ownership private to staff; only owner appoints/demotes admins, while admins can request changes.
 - [Workspace validation](workspace-validation.md) — CHECK drift, stale declarations and mismatched ORM peer-resolution contexts.
+- [Deployment boundaries](deployment-boundaries.md) — one domain: public frontend and /api; sandbox internal only; bindings require actual server calls.
 - [Social privacy](social-privacy.md) — enforce RLS under a restricted role; keep notifications recipient-private and local UI identity-scoped.
 - [Commerce rules](commerce-rules.md) — requested Paystack, ₦2,000 Premium, official-launch calendar gating and accurate separate financial reporting.

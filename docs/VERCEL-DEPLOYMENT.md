@@ -1,15 +1,15 @@
-# Campus Core on Vercel
+# Campus Core on Vercel Services
 
 ## Architecture and project settings
 
-Use **one Vercel project**, Root Directory **repository root (`.`)**, not either artifact directory. Set Framework Preset **Other** (`framework: null` in `vercel.json`) and Node.js **24.x**, matching the existing root engine. Keep the pnpm lockfile and pinned `packageManager: pnpm@10.26.1`. Do not deploy `lib/*`, scripts, or the mockup sandbox as separate projects.
+Use **one Vercel project**, Root Directory **repository root (`.`)**, and one shared domain. Let Vercel detect Services from `vercel.json`; do not override the project with a single Other/Vite/Express build configuration. Frameworks, installs, builds and outputs are owned by each service. Use Node.js **24.x** and keep `packageManager: pnpm@10.26.1`. Do not create separate projects for these services, shared libraries or scripts.
 
 | Setting | Value |
 | --- | --- |
-| Install command | `pnpm install --frozen-lockfile --prod=false` (includes build tooling) |
-| Build command | `pnpm run build:vercel` |
-| Output directory | `artifacts/campus-core/dist/public` |
-| API entry | `api/index.mjs` → bundled `artifacts/api-server/dist/vercel.mjs` |
+| Install command | Per service: `pnpm --dir ../.. install --frozen-lockfile --prod=false` |
+| Build command | Per service, as below; local aggregate: `pnpm run build:vercel` |
+| Output directory | Per-service static outputs; no project-wide override |
+| API entry | `artifacts/api-server/vercel.mjs` → bundled `dist/vercel.mjs` |
 | API runtime | Vercel Node Function; Fluid compute recommended |
 | Health check | `/api/healthz` (checks PostgreSQL) |
 | Start command | None: Vercel invokes the function; do not use `pnpm start` |
@@ -18,11 +18,27 @@ Use **one Vercel project**, Root Directory **repository root (`.`)**, not either
 
 **pnpm version (required).** `pnpm-workspace.yaml` relies on pnpm 10 settings (`catalog`, `overrides`, `onlyBuiltDependencies`, `minimumReleaseAge`). For a `lockfileVersion: 9.0` lockfile Vercel may select pnpm 9 or 10, and honors `packageManager` (`pnpm@10.26.1`) only when Corepack is enabled with `ENABLE_EXPERIMENTAL_COREPACK=1`. Without it a pnpm 9 install can ignore these settings and fail `--frozen-lockfile` or change dependency resolution. Confirm `pnpm 10.26.1` in the build log. If install still reports a lockfile/config mismatch, regenerate the lockfile locally with pnpm 10.26.1 and review the diff before committing.
 
-The build type-checks shared packages and artifacts, builds the unchanged Vite frontend, then bundles the API's separate serverless entry with the existing esbuild/Pino setup. Workspace TypeScript and project references are resolved before Vercel traces the function. Native Sharp and Google Cloud dependencies remain external and must be included by Vercel's dependency tracing; a hosted preview must verify image finalization and storage access.
+| Service | Root | Framework | Command from repository root | Service-relative output |
+| --- | --- | --- | --- | --- |
+| `campus-core` | `artifacts/campus-core` | `vite` | `pnpm run build:vercel:campus-core` | `dist/public` |
+| `api-server` | `artifacts/api-server` | `express` | `pnpm run build:vercel:api-server` | `dist/vercel.mjs` plus workers; packaged as a Vercel Function, not a static output |
+| `mockup-sandbox` | `artifacts/mockup-sandbox` | `vite` | `pnpm run build:vercel:mockup-sandbox` | `dist` |
 
-`vercel.json` routes all `/api` paths to the function **before** the filesystem/CDN and SPA fallback. This includes nested Clerk `/api/__clerk/...`, webhooks, and unknown API paths (which must return API 404, not HTML). Existing static assets are served from the Vite output, then non-API deep links fall back to `index.html`. The client already uses same-origin `/api`; no separate API origin, frontend proxy, or CORS expansion is needed.
+The configured service commands run **from each service root** and use `pnpm --dir ../..` to reach the workspace. Frontend and API builds generate shared library declarations before app typechecking; neither needs another app's build output. The sandbox builds before typechecking so Vite's plugin generates its component registry on a fresh checkout. Both static builds explicitly use `BASE_PATH=/`. The sandbox's local development default stays `/__mockup/`. If the dashboard offers an option to include files outside service roots, enable it: shared libraries, the root lockfile and imported assets must remain available.
+
+The API reuses the existing esbuild/Pino bundle and its separate serverless entry. The original root `api/index.mjs` was moved to `artifacts/api-server/vercel.mjs`; it is not left as a competing deployment. An outer Express application delegates to the unchanged API and the authenticated maintenance handler, without parsing request bodies. Workspace TypeScript and project references resolve before function tracing. Native Sharp and Google Cloud dependencies remain external and require hosted-preview packaging verification.
+
+Top-level rewrites route bare `/api` and `/api/(.*)` to `api-server`, then everything else to `campus-core`. Services preserve the incoming URL. Express already registers `/api`, the `/api/__clerk` proxy, and `/api/commerce/webhooks/paystack` raw-body capture: do not strip the prefix. Unknown API routes must return JSON 404, not frontend HTML. Each static service owns its SPA fallback and asset handling. The browser already uses same-origin `/api`; no API-origin code change or CORS expansion is needed.
+
+**Confirmed service bindings: none.** Browser-to-API traffic is public same-origin traffic, not a server binding. Backend dependencies are external PostgreSQL, Clerk, GCS, directory sources, and optionally Paystack. The Replit storage sidecar is development-only, not another Vercel service.
+
+`mockup-sandbox` has no public rewrite and no caller binding. Production imports/requests do not depend on it. This makes it internal/unreachable through public ingress, **not an authenticated staff page**. No staff-browser route is provided. Its static renderer builds, but Vite live editing/HMR remains workspace-only; use the existing managed preview workflow for design work.
 
 The Vercel entry does not import `src/index.ts`, bind a port, start upload cleanup on cold start, or install a persistent interval. The normal entry and `railway.json` are preserved. `pnpm run build:railway` / `pnpm run start:railway` still support Railway.
+
+### Services availability and project access
+
+The official [Services overview](https://vercel.com/docs/services) and [guide](https://vercel.com/kb/guide/vercel-services) currently state **Beta on all plans**, without a documented private waitlist requirement. This uses the current `services` model, not `experimentalServices`/`routePrefix`. No `.vercel/project.json` link exists here, and no authenticated project/account lookup was performed. Exact project access, dashboard detection and account-specific restrictions remain unverified. Do not link, pull credentials or deploy merely to test availability without approval.
 
 ## Environment variables
 
@@ -33,7 +49,7 @@ Use Vercel's encrypted environment settings, separately scoped to Preview and Pr
 - `VITE_CLERK_PUBLISHABLE_KEY`: the publishable key for the intended Clerk environment.
 - `VITE_CLERK_PROXY_URL`: optional override; normally leave unset because the existing frontend uses the current origin plus `/api/__clerk`.
 
-Build output contains `VITE_` values. Never put a secret in a `VITE_` variable. Frontend base path must remain `/` (leave `BASE_PATH` unset or set `/`).
+Build output contains `VITE_` values. Never put a secret in a `VITE_` variable. Service builds fix the static base paths to `/`. Services share project environment configuration: internal routing is not secret isolation. Never put credentials into generated mockups, static assets or `VITE_` values.
 
 ### Server runtime secrets
 
@@ -95,7 +111,7 @@ pnpm run test:vercel
 pnpm --filter @workspace/api-server run test
 ```
 
-`test:vercel` imports the actual production function on an ephemeral local server. It checks API precedence/config, built frontend assets, DB health, unknown API 404, anonymous authorization, maintenance fail-closed behavior and exact-byte webhook HMAC. It uses a synthetic test key only in its own process, rejects any Paystack API call, does not execute cleanup, and does not write database fixtures. This is not Vercel-hosted routing, deployment tracing, or a real payment test.
+`test:vercel` checks all three service definitions, rejects ambiguous root build fields, checks route precedence and no sandbox exposure/bindings, validates static outputs, and imports the API service entry on an ephemeral local server. HTTP checks cover DB health, unknown API 404, anonymous authorization, maintenance fail-closed behavior and exact-byte webhook HMAC. It uses a synthetic test key only in its own process, rejects Paystack API calls, does not execute cleanup, and does not write database fixtures. This is a local route-table/function smoke, not Vercel's hosted service router, deployment tracing, or a real payment test.
 
 The normal API suite also tests cron authentication using injected cleanup stubs, plus existing rollback-only DB constraints/RLS and payment safeguards. It requires the normal local API workflow to be running.
 
@@ -110,6 +126,7 @@ Vercel-hosted Preview verification still requires a Vercel project/environment. 
 5. GCS signed upload/finalization/download using a nonsensitive file; no private bucket public ACL.
 6. Payment gates remain off; test-only provider flow only after separate configuration.
 7. Cron authorization rejection; exercise actual cleanup only against approved staging fixtures.
+8. Public sandbox-prefix attempts cannot reach the internal service; no caller bindings exist.
 
 Use `test:staging` only with the explicit non-production guard described in the existing guide. Vercel deployment protection may block external smoke tests, Clerk callbacks or webhooks; resolve approved access rather than disabling safeguards silently.
 
@@ -129,3 +146,6 @@ No Vercel project was provisioned, hosted deployment run, domain/DNS changed, pr
 - [Express on Vercel](https://vercel.com/docs/frameworks/backend/express)
 - [Project configuration](https://vercel.com/docs/project-configuration/vercel-json)
 - [PostgreSQL pool lifecycle](https://vercel.com/guides/connection-pooling-with-functions)
+- [Services routing and original URL preservation](https://vercel.com/docs/services/routing)
+- [Service configuration reference](https://vercel.com/docs/services/config-reference)
+- [Service bindings](https://vercel.com/docs/services/bindings)

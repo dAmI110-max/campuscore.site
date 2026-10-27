@@ -8,21 +8,32 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const settings = JSON.parse(await readFile(path.join(root, "vercel.json"), "utf8"));
-assert.equal(settings.framework, null);
-assert.equal(settings.buildCommand, "pnpm run build:vercel");
-assert.equal(settings.routes[0].dest, "/api/index.mjs");
-const apiRoute = new RegExp(`^(?:${settings.routes[0].src})$`);
-for (const url of ["/api", "/api/healthz", "/api/__clerk/v1/client", "/api/commerce/webhooks/paystack", "/api/not-found"]) {
-  assert.ok(apiRoute.test(url), `API routing must take precedence for ${url}`);
+for (const forbidden of ["framework", "buildCommand", "installCommand", "functions", "outputDirectory", "routes"]) {
+  assert.equal(settings[forbidden], undefined, `No ambiguous top-level ${forbidden} in Services mode`);
 }
-assert.equal(apiRoute.test("/apiary"), false);
-assert.equal(settings.routes[1].handle, "filesystem");
-assert.equal(settings.routes[2].dest, "/index.html");
-const web = path.join(root, settings.outputDirectory);
+assert.deepEqual(Object.keys(settings.services).sort(), ["api-server", "campus-core", "mockup-sandbox"]);
+const selectService = pathname => settings.rewrites.find(rule =>
+  new RegExp(`^(?:${rule.source})$`).test(pathname))?.destination.service;
+for (const url of ["/api", "/api/healthz", "/api/__clerk/v1/client", "/api/commerce/webhooks/paystack", "/api/not-found"]) {
+  assert.equal(selectService(url), "api-server", `API routing must take precedence for ${url}`);
+}
+for (const url of ["/", "/apiary", "/account", "/__mockup/preview/Component", "/mockup-sandbox"]) {
+  assert.equal(selectService(url), "campus-core");
+}
+assert.ok(settings.rewrites.every(rule => rule.destination.service !== "mockup-sandbox"));
+for (const service of Object.values(settings.services)) assert.equal(service.bindings?.length ?? 0, 0);
+assert.equal(settings.services["api-server"].entrypoint, "vercel.mjs");
+assert.equal(settings.services["api-server"].framework, "express");
+assert.deepEqual(settings.crons, [{ path: "/api/internal/maintenance/uploads", schedule: "0 3 * * *" }]);
+const frontend = settings.services["campus-core"];
+assert.equal(frontend.rewrites[0].destination, "/index.html");
+const web = path.join(root, frontend.root, frontend.outputDirectory);
 const html = await readFile(path.join(web, "index.html"), "utf8");
 const asset = html.match(/src="([^"]+\.js)"/)?.[1];
 assert.ok(asset, "Frontend build must contain an actual built JavaScript asset");
 await access(path.join(web, asset.replace(/^\//, "")));
+const sandbox = settings.services["mockup-sandbox"];
+await access(path.join(root, sandbox.root, sandbox.outputDirectory, "index.html"));
 
 process.env.NODE_ENV = "production";
 process.env.VERCEL = "1";
@@ -41,7 +52,8 @@ globalThis.fetch = (input, init) => {
   return realFetch(input, init);
 };
 
-const adapter = await import(path.join(root, "api/index.mjs"));
+const backend = settings.services["api-server"];
+const adapter = await import(path.join(root, backend.root, backend.entrypoint));
 assert.equal(adapter.config.api.bodyParser, false);
 const server = createServer(adapter.default);
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));

@@ -1,19 +1,44 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "installCommand": "pnpm install --frozen-lockfile --prod=false",
-  "buildCommand": "pnpm run build:vercel",
-  "outputDirectory": "artifacts/campus-core/dist/public",
-  "functions": {
-    "api/index.mjs": {
-      "includeFiles": "artifacts/api-server/dist/**",
-      "maxDuration": 60
+  "services": {
+    "campus-core": {
+      "root": "artifacts/campus-core",
+      "framework": "vite",
+      "installCommand": "pnpm --dir ../.. install --frozen-lockfile --prod=false",
+      "buildCommand": "pnpm --dir ../.. run build:vercel:campus-core",
+      "outputDirectory": "dist/public",
+      "rewrites": [
+        { "source": "/(.*)", "destination": "/index.html" }
+      ]
+    },
+    "api-server": {
+      "root": "artifacts/api-server",
+      "framework": "express",
+      "entrypoint": "vercel.mjs",
+      "installCommand": "pnpm --dir ../.. install --frozen-lockfile --prod=false",
+      "buildCommand": "pnpm --dir ../.. run build:vercel:api-server",
+      "functions": {
+        "vercel.mjs": {
+          "includeFiles": "dist/**",
+          "maxDuration": 60
+        }
+      }
+    },
+    "mockup-sandbox": {
+      "root": "artifacts/mockup-sandbox",
+      "framework": "vite",
+      "installCommand": "pnpm --dir ../.. install --frozen-lockfile --prod=false",
+      "buildCommand": "pnpm --dir ../.. run build:vercel:mockup-sandbox",
+      "outputDirectory": "dist",
+      "rewrites": [
+        { "source": "/(.*)", "destination": "/index.html" }
+      ]
     }
   },
-  "routes": [
-    { "src": "^/api(?:/.*)?$", "dest": "/api/index.mjs" },
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api", "destination": { "service": "api-server" } },
+    { "source": "/api/(.*)", "destination": { "service": "api-server" } },
+    { "source": "/(.*)", "destination": { "service": "campus-core" } }
   ],
   "crons": [
     { "path": "/api/internal/maintenance/uploads", "schedule": "0 3 * * *" }
