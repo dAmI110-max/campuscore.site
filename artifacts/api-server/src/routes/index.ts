@@ -11,6 +11,7 @@ import notificationsRouter from "./notifications";
 import safetyRouter from "./safety";
 import commerceRouter from "./commerce";
 import commerceAnalyticsRouter from "./commerce-analytics";
+import roommatesRouter from "./roommates";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(notificationsRouter);
 router.use(safetyRouter);
 router.use(commerceRouter);
 router.use(commerceAnalyticsRouter);
+router.use(roommatesRouter);
 
 export default router;

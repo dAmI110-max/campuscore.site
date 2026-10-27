@@ -6,6 +6,18 @@ info:
 servers:
   - url: /api
 paths:
+  /roommates:
+    $ref: "./roommates.openapi.yaml#/paths/~1roommates"
+  /roommates/mine:
+    $ref: "./roommates.openapi.yaml#/paths/~1roommates~1mine"
+  /roommates/interests:
+    $ref: "./roommates.openapi.yaml#/paths/~1roommates~1interests"
+  /roommates/interests/{id}:
+    $ref: "./roommates.openapi.yaml#/paths/~1roommates~1interests~1{id}"
+  /roommates/interests/{id}/conversation:
+    $ref: "./roommates.openapi.yaml#/paths/~1roommates~1interests~1{id}~1conversation"
+  /admin/roommates/{username}/visibility:
+    $ref: "./roommates.openapi.yaml#/paths/~1admin~1roommates~1{username}~1visibility"
   /commerce/account:
     $ref: "./commerce.openapi.yaml#/paths/~1commerce~1account"
   /commerce/checkout:

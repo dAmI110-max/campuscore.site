@@ -105,7 +105,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err?.type === "entity.too.large") { res.status(413).json({ error: "Request too large." }); return; }
   if (err?.type === "encoding.unsupported") { res.status(415).json({ error: "Compressed request bodies are not supported." }); return; }
   if (err?.type === "entity.parse.failed") { res.status(400).json({ error: "Invalid JSON request body." }); return; }
-  if (/^\/api\/(conversations|safety|notifications|admin\/user-reports)(\/|$)/.test(req.path)) {
+  if (/^\/api\/(conversations|safety|notifications|roommates|profile|admin\/(?:user-reports|roommates))(\/|$)/.test(req.path)) {
     // Drizzle errors may contain query parameters: never log chat/report contents.
     req.log.error({ code: typeof code === "string" ? code : "UNKNOWN" }, "Private request failed");
   } else req.log.error({ err }, "Request failed");

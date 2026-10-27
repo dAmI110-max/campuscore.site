@@ -8,6 +8,244 @@
 import * as zod from 'zod';
 
 
+export const listRoommatesQueryQMax = 100;
+
+
+export const listRoommatesQueryCampusMax = 100;
+
+export const listRoommatesQueryMinBudgetMin = 0;
+export const listRoommatesQueryMinBudgetMax = 100000000;
+
+export const listRoommatesQueryMaxBudgetMin = 0;
+export const listRoommatesQueryMaxBudgetMax = 100000000;
+
+export const listRoommatesQueryPageMax = 10000;
+
+
+
+export const ListRoommatesQueryParams = zod.object({
+  "q": zod.coerce.string().max(listRoommatesQueryQMax).optional(),
+  "universityId": zod.coerce.number().int().min(1).optional(),
+  "campus": zod.coerce.string().max(listRoommatesQueryCampusMax).optional(),
+  "minBudget": zod.coerce.number().int().min(listRoommatesQueryMinBudgetMin).max(listRoommatesQueryMinBudgetMax).optional(),
+  "maxBudget": zod.coerce.number().int().min(listRoommatesQueryMaxBudgetMin).max(listRoommatesQueryMaxBudgetMax).optional(),
+  "accommodationType": zod.enum(['hostel', 'flat', 'self-contained', 'any']).optional(),
+  "sharing": zod.enum(['private', 'shared', 'either']).optional(),
+  "smoking": zod.enum(['non-smoker', 'smoker', 'either']).optional(),
+  "page": zod.coerce.number().int().min(1).max(listRoommatesQueryPageMax).optional()
+})
+
+export const ListRoommatesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "universityId": zod.int(),
+  "universityName": zod.string(),
+  "accommodationType": zod.string(),
+  "campus": zod.string().optional(),
+  "budgetMin": zod.int().optional(),
+  "budgetMax": zod.int().optional(),
+  "moveInDate": zod.string().optional(),
+  "sharing": zod.string().optional(),
+  "smoking": zod.string().optional(),
+  "cleanliness": zod.string().optional(),
+  "sleep": zod.string().optional(),
+  "study": zod.string().optional(),
+  "about": zod.string().optional(),
+  "reasons": zod.array(zod.string())
+})),
+  "total": zod.int(),
+  "page": zod.int()
+})
+
+
+
+export const getMyRoommateResponseProfileOneCampusMin = 2;
+export const getMyRoommateResponseProfileOneCampusMax = 100;
+
+export const getMyRoommateResponseProfileOneBudgetMinMin = 0;
+export const getMyRoommateResponseProfileOneBudgetMinMax = 100000000;
+
+export const getMyRoommateResponseProfileOneBudgetMaxMin = 0;
+export const getMyRoommateResponseProfileOneBudgetMaxMax = 100000000;
+
+export const getMyRoommateResponseProfileOneMoveInDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getMyRoommateResponseProfileOneAboutMax = 800;
+
+export const getMyRoommateResponseProfileOneVisibleFieldsMax = 5;
+
+
+
+export const GetMyRoommateResponse = zod.object({
+  "profile": zod.union([zod.object({
+  "universityId": zod.int().min(1),
+  "campus": zod.string().min(getMyRoommateResponseProfileOneCampusMin).max(getMyRoommateResponseProfileOneCampusMax),
+  "accommodationType": zod.enum(['hostel', 'flat', 'self-contained', 'any']),
+  "budgetMin": zod.int().min(getMyRoommateResponseProfileOneBudgetMinMin).max(getMyRoommateResponseProfileOneBudgetMinMax),
+  "budgetMax": zod.int().min(getMyRoommateResponseProfileOneBudgetMaxMin).max(getMyRoommateResponseProfileOneBudgetMaxMax),
+  "moveInDate": zod.string().regex(getMyRoommateResponseProfileOneMoveInDateRegExp),
+  "sharing": zod.enum(['private', 'shared', 'either']),
+  "smoking": zod.enum(['non-smoker', 'smoker', 'either']),
+  "cleanliness": zod.enum(['tidy', 'flexible']),
+  "sleep": zod.enum(['early', 'late', 'flexible']),
+  "study": zod.enum(['quiet', 'social', 'flexible']),
+  "about": zod.string().max(getMyRoommateResponseProfileOneAboutMax),
+  "visibleFields": zod.array(zod.enum(['campus', 'budget', 'moveInDate', 'preferences', 'about'])).max(getMyRoommateResponseProfileOneVisibleFieldsMax),
+  "active": zod.boolean()
+}),zod.null()])
+})
+
+
+
+export const saveMyRoommateBodyCampusMin = 2;
+export const saveMyRoommateBodyCampusMax = 100;
+
+export const saveMyRoommateBodyBudgetMinMin = 0;
+export const saveMyRoommateBodyBudgetMinMax = 100000000;
+
+export const saveMyRoommateBodyBudgetMaxMin = 0;
+export const saveMyRoommateBodyBudgetMaxMax = 100000000;
+
+export const saveMyRoommateBodyMoveInDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const saveMyRoommateBodyAboutMax = 800;
+
+export const saveMyRoommateBodyVisibleFieldsMax = 5;
+
+
+
+export const SaveMyRoommateBody = zod.object({
+  "universityId": zod.int().min(1),
+  "campus": zod.string().min(saveMyRoommateBodyCampusMin).max(saveMyRoommateBodyCampusMax),
+  "accommodationType": zod.enum(['hostel', 'flat', 'self-contained', 'any']),
+  "budgetMin": zod.int().min(saveMyRoommateBodyBudgetMinMin).max(saveMyRoommateBodyBudgetMinMax),
+  "budgetMax": zod.int().min(saveMyRoommateBodyBudgetMaxMin).max(saveMyRoommateBodyBudgetMaxMax),
+  "moveInDate": zod.string().regex(saveMyRoommateBodyMoveInDateRegExp),
+  "sharing": zod.enum(['private', 'shared', 'either']),
+  "smoking": zod.enum(['non-smoker', 'smoker', 'either']),
+  "cleanliness": zod.enum(['tidy', 'flexible']),
+  "sleep": zod.enum(['early', 'late', 'flexible']),
+  "study": zod.enum(['quiet', 'social', 'flexible']),
+  "about": zod.string().max(saveMyRoommateBodyAboutMax),
+  "visibleFields": zod.array(zod.enum(['campus', 'budget', 'moveInDate', 'preferences', 'about'])).max(saveMyRoommateBodyVisibleFieldsMax),
+  "active": zod.boolean()
+})
+
+
+export const saveMyRoommateResponseCampusMin = 2;
+export const saveMyRoommateResponseCampusMax = 100;
+
+export const saveMyRoommateResponseBudgetMinMin = 0;
+export const saveMyRoommateResponseBudgetMinMax = 100000000;
+
+export const saveMyRoommateResponseBudgetMaxMin = 0;
+export const saveMyRoommateResponseBudgetMaxMax = 100000000;
+
+export const saveMyRoommateResponseMoveInDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const saveMyRoommateResponseAboutMax = 800;
+
+export const saveMyRoommateResponseVisibleFieldsMax = 5;
+
+
+
+export const SaveMyRoommateResponse = zod.object({
+  "universityId": zod.int().min(1),
+  "campus": zod.string().min(saveMyRoommateResponseCampusMin).max(saveMyRoommateResponseCampusMax),
+  "accommodationType": zod.enum(['hostel', 'flat', 'self-contained', 'any']),
+  "budgetMin": zod.int().min(saveMyRoommateResponseBudgetMinMin).max(saveMyRoommateResponseBudgetMinMax),
+  "budgetMax": zod.int().min(saveMyRoommateResponseBudgetMaxMin).max(saveMyRoommateResponseBudgetMaxMax),
+  "moveInDate": zod.string().regex(saveMyRoommateResponseMoveInDateRegExp),
+  "sharing": zod.enum(['private', 'shared', 'either']),
+  "smoking": zod.enum(['non-smoker', 'smoker', 'either']),
+  "cleanliness": zod.enum(['tidy', 'flexible']),
+  "sleep": zod.enum(['early', 'late', 'flexible']),
+  "study": zod.enum(['quiet', 'social', 'flexible']),
+  "about": zod.string().max(saveMyRoommateResponseAboutMax),
+  "visibleFields": zod.array(zod.enum(['campus', 'budget', 'moveInDate', 'preferences', 'about'])).max(saveMyRoommateResponseVisibleFieldsMax),
+  "active": zod.boolean()
+})
+
+
+export const getRoommateInterestsQueryPageMax = 10000;
+
+
+
+export const GetRoommateInterestsQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).max(getRoommateInterestsQueryPageMax).optional()
+})
+
+export const GetRoommateInterestsResponse = zod.object({
+  "page": zod.int(),
+  "total": zod.int(),
+  "items": zod.array(zod.object({
+  "id": zod.int(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "incoming": zod.boolean(),
+  "canMessage": zod.boolean(),
+  "status": zod.enum(['pending', 'accepted', 'declined', 'cancelled'])
+}))
+})
+
+
+export const sendRoommateInterestBodyUsernameRegExp = new RegExp('^[a-z][a-z0-9_]{2,23}$');
+
+
+export const SendRoommateInterestBody = zod.object({
+  "username": zod.string().regex(sendRoommateInterestBodyUsernameRegExp)
+})
+
+export const SendRoommateInterestResponse = zod.object({
+  "message": zod.string()
+})
+
+
+
+
+
+export const RespondRoommateInterestParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const RespondRoommateInterestBody = zod.object({
+  "action": zod.enum(['accept', 'decline', 'cancel'])
+})
+
+export const RespondRoommateInterestResponse = zod.object({
+  "message": zod.string()
+})
+
+
+
+
+
+export const OpenRoommateConversationParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const OpenRoommateConversationResponse = zod.object({
+  "id": zod.int()
+})
+
+
+export const ModerateRoommateParams = zod.object({
+  "username": zod.coerce.string()
+})
+
+export const moderateRoommateBodyReasonMin = 5;
+export const moderateRoommateBodyReasonMax = 1000;
+
+
+
+export const ModerateRoommateBody = zod.object({
+  "hidden": zod.boolean(),
+  "reason": zod.string().min(moderateRoommateBodyReasonMin).max(moderateRoommateBodyReasonMax)
+})
+
+export const ModerateRoommateResponse = zod.object({
+  "message": zod.string()
+})
+
+
 export const GetCommerceAccountResponse = zod.object({
   "accountType": zod.enum(['buyer', 'seller']),
   "sellerListingCount": zod.int(),

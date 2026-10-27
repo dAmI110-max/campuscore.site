@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Readable } from 'stream';
 import { File, Storage } from '@google-cloud/storage';
+import { HttpError } from './errors';
 
 import {
   canAccessObject,
@@ -44,10 +45,10 @@ function createObjectStorageClient(): Storage {
   try {
     credentials = JSON.parse(rawCredentials);
   } catch {
-    throw new Error('GCS_CREDENTIALS_JSON must contain valid Google service-account JSON.');
+    throw new HttpError(503, 'File storage credentials are not configured correctly. No upload was completed.');
   }
   if (!credentials.project_id || !credentials.client_email || !credentials.private_key) {
-    throw new Error('GCS_CREDENTIALS_JSON must include project_id, client_email and private_key.');
+    throw new HttpError(503, 'File storage credentials are incomplete. No upload was completed.');
   }
 
   return new Storage({
@@ -59,7 +60,12 @@ function createObjectStorageClient(): Storage {
   });
 }
 
-export const objectStorageClient = createObjectStorageClient();
+// Storage is optional for browsing. Do not let invalid optional credentials
+// crash module import and take unrelated marketplace/profile routes offline.
+let storageClient: Storage | undefined;
+export function getObjectStorageClient(): Storage {
+  return storageClient ??= createObjectStorageClient();
+}
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -107,7 +113,7 @@ export class ObjectStorageService {
       const fullPath = `${searchPath}/${filePath}`;
 
       const { bucketName, objectName } = parseObjectPath(fullPath);
-      const bucket = objectStorageClient.bucket(bucketName);
+      const bucket = getObjectStorageClient().bucket(bucketName);
       const file = bucket.file(objectName);
 
       const [exists] = await file.exists();
@@ -181,7 +187,7 @@ export class ObjectStorageService {
     }
     const objectEntityPath = `${entityDir}${entityId}`;
     const { bucketName, objectName } = parseObjectPath(objectEntityPath);
-    const bucket = objectStorageClient.bucket(bucketName);
+    const bucket = getObjectStorageClient().bucket(bucketName);
     const objectFile = bucket.file(objectName);
     const [exists] = await objectFile.exists();
     if (!exists) {
@@ -276,7 +282,7 @@ async function signObjectURL({
 }): Promise<string> {
   if (process.env.REPL_ID === undefined) {
     const action = method === 'PUT' ? 'write' : method === 'GET' || method === 'HEAD' ? 'read' : 'delete';
-    const [url] = await objectStorageClient.bucket(bucketName).file(objectName).getSignedUrl({
+    const [url] = await getObjectStorageClient().bucket(bucketName).file(objectName).getSignedUrl({
       version: 'v4',
       action,
       expires: Date.now() + ttlSec * 1000,

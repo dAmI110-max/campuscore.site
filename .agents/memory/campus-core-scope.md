@@ -20,3 +20,14 @@ Prioritize a secure working core over superficial breadth. Do not call a release
 **Why:** The user's definition of done explicitly requires real test results, launch blockers and deployed-journey verification.
 
 **How to apply:** Distinguish implementation from verification in status reports; retain disabled-state honesty for integrations and incomplete modules.
+
+Roommate Finder must protect private contact details and precise accommodation
+addresses. Compatibility is based on declared preferences, not a guarantee of
+safety or successful cohabitation.
+
+**Why:** The user's production-readiness specification explicitly requires
+privacy controls and transparent, qualified compatibility matching.
+
+**How to apply:** Use coarse campus/area information, authenticated discovery
+and mutual-interest contact flows; do not add public phone/address fields or
+claim students or accommodation are safety-certified.

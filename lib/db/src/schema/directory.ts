@@ -1,6 +1,7 @@
-import { pgTable, serial, text, integer, boolean, timestamp, uniqueIndex, check, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, pgPolicy, serial, text, integer, boolean, timestamp, uniqueIndex, check, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { socialRole } from "./roles";
 
 export const directoryTable = pgTable("academic_directory", {
   id: serial("id").primaryKey(),
@@ -12,6 +13,7 @@ export const directoryTable = pgTable("academic_directory", {
 }, t => [
   uniqueIndex("directory_parent_name").on(t.kind, t.parentId, t.name),
   check("directory_kind", sql`${t.kind} in ('country','university','faculty','department')`),
+  pgPolicy("roommate_university_lookup", { for: "select", to: socialRole, using: sql`${t.kind} = 'university' and ${t.active}` }),
 ]).enableRLS();
 export const insertDirectorySchema = createInsertSchema(directoryTable).omit({ id: true });
 export type DirectoryEntry = typeof directoryTable.$inferSelect;

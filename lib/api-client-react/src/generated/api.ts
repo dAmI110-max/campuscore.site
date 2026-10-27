@@ -51,6 +51,9 @@ import type {
   GetCommerceAdminParams,
   GetConversationParams,
   GetDirectoryParams,
+  GetMyRoommate200,
+  GetRoommateInterests200,
+  GetRoommateInterestsParams,
   GetStaffAccessParams,
   HealthStatus,
   InstitutionRequestInput,
@@ -59,14 +62,18 @@ import type {
   ListListingsParams,
   ListMyUserReportsParams,
   ListNotificationsParams,
+  ListRoommates200,
+  ListRoommatesParams,
   ListUserReportsParams,
   Listing,
   ListingInput,
   ListingPage,
   Message,
+  ModerateRoommateBody,
   ModerationInput,
   MyReportPage,
   NotificationPage,
+  OpenRoommateConversation200,
   PeoplePage,
   Profile,
   ProfileInput,
@@ -74,9 +81,13 @@ import type {
   ReadAllNotificationsBody,
   ReadConversationBody,
   ReportInput,
+  RespondRoommateInterestBody,
   ReviewUserReportInput,
+  RoommateInput,
+  RoommateMessage,
   SearchPeopleParams,
   SendMessageInput,
+  SendRoommateInterestBody,
   SocialAction,
   SocialSummary,
   StaffAccess,
@@ -120,6 +131,703 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListRoommatesUrl = (params?: ListRoommatesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/roommates?${stringifiedParams}` : `/api/roommates`
+}
+
+export const listRoommates = async (params?: ListRoommatesParams, options?: Parameters<typeof customFetch>[1]): Promise<ListRoommates200> => {
+
+  return customFetch<ListRoommates200>(getListRoommatesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRoommatesQueryKey = (params?: ListRoommatesParams,) => {
+    return [
+    `/api/roommates`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListRoommatesQueryOptions = <TData = Awaited<ReturnType<typeof listRoommates>>, TError = ErrorType<unknown>>(params?: ListRoommatesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoommates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRoommatesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRoommates>>> = ({ signal }) => listRoommates(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRoommates>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListRoommatesQueryResult = NonNullable<Awaited<ReturnType<typeof listRoommates>>>
+export type ListRoommatesQueryError = ErrorType<unknown>
+
+
+export function useListRoommates<TData = Awaited<ReturnType<typeof listRoommates>>, TError = ErrorType<unknown>>(
+ params: undefined |  ListRoommatesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoommates>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRoommates>>,
+          TError,
+          Awaited<ReturnType<typeof listRoommates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRoommates<TData = Awaited<ReturnType<typeof listRoommates>>, TError = ErrorType<unknown>>(
+ params?: ListRoommatesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoommates>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRoommates>>,
+          TError,
+          Awaited<ReturnType<typeof listRoommates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRoommates<TData = Awaited<ReturnType<typeof listRoommates>>, TError = ErrorType<unknown>>(
+ params?: ListRoommatesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoommates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListRoommates<TData = Awaited<ReturnType<typeof listRoommates>>, TError = ErrorType<unknown>>(
+ params?: ListRoommatesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoommates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListRoommatesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyRoommateUrl = () => {
+
+
+
+
+  return `/api/roommates/mine`
+}
+
+export const getMyRoommate = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetMyRoommate200> => {
+
+  return customFetch<GetMyRoommate200>(getGetMyRoommateUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyRoommateQueryKey = () => {
+    return [
+    `/api/roommates/mine`
+    ] as const;
+    }
+
+
+export const getGetMyRoommateQueryOptions = <TData = Awaited<ReturnType<typeof getMyRoommate>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyRoommate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyRoommateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyRoommate>>> = ({ signal }) => getMyRoommate({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyRoommate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyRoommateQueryResult = NonNullable<Awaited<ReturnType<typeof getMyRoommate>>>
+export type GetMyRoommateQueryError = ErrorType<unknown>
+
+
+export function useGetMyRoommate<TData = Awaited<ReturnType<typeof getMyRoommate>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyRoommate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyRoommate>>,
+          TError,
+          Awaited<ReturnType<typeof getMyRoommate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyRoommate<TData = Awaited<ReturnType<typeof getMyRoommate>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyRoommate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyRoommate>>,
+          TError,
+          Awaited<ReturnType<typeof getMyRoommate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyRoommate<TData = Awaited<ReturnType<typeof getMyRoommate>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyRoommate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMyRoommate<TData = Awaited<ReturnType<typeof getMyRoommate>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyRoommate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyRoommateQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveMyRoommateUrl = () => {
+
+
+
+
+  return `/api/roommates/mine`
+}
+
+export const saveMyRoommate = async (roommateInput: RoommateInput, options?: Parameters<typeof customFetch>[1]): Promise<RoommateInput> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RoommateInput>(getSaveMyRoommateUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(roommateInput)
+  }
+);}
+
+
+
+
+
+export const getSaveMyRoommateMutationKey = () => ['saveMyRoommate'] as const;
+
+export const getSaveMyRoommateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMyRoommate>>, TError,SaveMyRoommateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveMyRoommate>>, TError,SaveMyRoommateMutationVariables, TContext> => {
+
+const mutationKey = getSaveMyRoommateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveMyRoommate>>, SaveMyRoommateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveMyRoommate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveMyRoommateMutationResult = NonNullable<Awaited<ReturnType<typeof saveMyRoommate>>>
+    export type SaveMyRoommateMutationBody = BodyType<RoommateInput>
+    export type SaveMyRoommateMutationError = ErrorType<unknown>
+    export type SaveMyRoommateMutationVariables = {data: BodyType<RoommateInput>}
+
+    export const useSaveMyRoommate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMyRoommate>>, TError,SaveMyRoommateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof saveMyRoommate>>,
+        TError,
+        SaveMyRoommateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveMyRoommateMutationOptions(options), queryClient);
+    }
+
+export const getGetRoommateInterestsUrl = (params?: GetRoommateInterestsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/roommates/interests?${stringifiedParams}` : `/api/roommates/interests`
+}
+
+export const getRoommateInterests = async (params?: GetRoommateInterestsParams, options?: Parameters<typeof customFetch>[1]): Promise<GetRoommateInterests200> => {
+
+  return customFetch<GetRoommateInterests200>(getGetRoommateInterestsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRoommateInterestsQueryKey = (params?: GetRoommateInterestsParams,) => {
+    return [
+    `/api/roommates/interests`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetRoommateInterestsQueryOptions = <TData = Awaited<ReturnType<typeof getRoommateInterests>>, TError = ErrorType<unknown>>(params?: GetRoommateInterestsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoommateInterests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRoommateInterestsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRoommateInterests>>> = ({ signal }) => getRoommateInterests(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRoommateInterests>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRoommateInterestsQueryResult = NonNullable<Awaited<ReturnType<typeof getRoommateInterests>>>
+export type GetRoommateInterestsQueryError = ErrorType<unknown>
+
+
+export function useGetRoommateInterests<TData = Awaited<ReturnType<typeof getRoommateInterests>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetRoommateInterestsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoommateInterests>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRoommateInterests>>,
+          TError,
+          Awaited<ReturnType<typeof getRoommateInterests>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRoommateInterests<TData = Awaited<ReturnType<typeof getRoommateInterests>>, TError = ErrorType<unknown>>(
+ params?: GetRoommateInterestsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoommateInterests>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRoommateInterests>>,
+          TError,
+          Awaited<ReturnType<typeof getRoommateInterests>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRoommateInterests<TData = Awaited<ReturnType<typeof getRoommateInterests>>, TError = ErrorType<unknown>>(
+ params?: GetRoommateInterestsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoommateInterests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetRoommateInterests<TData = Awaited<ReturnType<typeof getRoommateInterests>>, TError = ErrorType<unknown>>(
+ params?: GetRoommateInterestsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRoommateInterests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRoommateInterestsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendRoommateInterestUrl = () => {
+
+
+
+
+  return `/api/roommates/interests`
+}
+
+export const sendRoommateInterest = async (sendRoommateInterestBody: SendRoommateInterestBody, options?: Parameters<typeof customFetch>[1]): Promise<RoommateMessage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RoommateMessage>(getSendRoommateInterestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sendRoommateInterestBody)
+  }
+);}
+
+
+
+
+
+export const getSendRoommateInterestMutationKey = () => ['sendRoommateInterest'] as const;
+
+export const getSendRoommateInterestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendRoommateInterest>>, TError,SendRoommateInterestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendRoommateInterest>>, TError,SendRoommateInterestMutationVariables, TContext> => {
+
+const mutationKey = getSendRoommateInterestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendRoommateInterest>>, SendRoommateInterestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendRoommateInterest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendRoommateInterestMutationResult = NonNullable<Awaited<ReturnType<typeof sendRoommateInterest>>>
+    export type SendRoommateInterestMutationBody = BodyType<SendRoommateInterestBody>
+    export type SendRoommateInterestMutationError = ErrorType<unknown>
+    export type SendRoommateInterestMutationVariables = {data: BodyType<SendRoommateInterestBody>}
+
+    export const useSendRoommateInterest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendRoommateInterest>>, TError,SendRoommateInterestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sendRoommateInterest>>,
+        TError,
+        SendRoommateInterestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendRoommateInterestMutationOptions(options), queryClient);
+    }
+
+export const getRespondRoommateInterestUrl = (id: number,) => {
+
+
+
+
+  return `/api/roommates/interests/${id}`
+}
+
+export const respondRoommateInterest = async (id: number,
+    respondRoommateInterestBody: RespondRoommateInterestBody, options?: Parameters<typeof customFetch>[1]): Promise<RoommateMessage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RoommateMessage>(getRespondRoommateInterestUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(respondRoommateInterestBody)
+  }
+);}
+
+
+
+
+
+export const getRespondRoommateInterestMutationKey = () => ['respondRoommateInterest'] as const;
+
+export const getRespondRoommateInterestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondRoommateInterest>>, TError,RespondRoommateInterestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof respondRoommateInterest>>, TError,RespondRoommateInterestMutationVariables, TContext> => {
+
+const mutationKey = getRespondRoommateInterestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondRoommateInterest>>, RespondRoommateInterestMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  respondRoommateInterest(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RespondRoommateInterestMutationResult = NonNullable<Awaited<ReturnType<typeof respondRoommateInterest>>>
+    export type RespondRoommateInterestMutationBody = BodyType<RespondRoommateInterestBody>
+    export type RespondRoommateInterestMutationError = ErrorType<unknown>
+    export type RespondRoommateInterestMutationVariables = {id: number;data: BodyType<RespondRoommateInterestBody>}
+
+    export const useRespondRoommateInterest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondRoommateInterest>>, TError,RespondRoommateInterestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof respondRoommateInterest>>,
+        TError,
+        RespondRoommateInterestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRespondRoommateInterestMutationOptions(options), queryClient);
+    }
+
+export const getOpenRoommateConversationUrl = (id: number,) => {
+
+
+
+
+  return `/api/roommates/interests/${id}/conversation`
+}
+
+export const openRoommateConversation = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<OpenRoommateConversation200> => {
+
+  return customFetch<OpenRoommateConversation200>(getOpenRoommateConversationUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getOpenRoommateConversationMutationKey = () => ['openRoommateConversation'] as const;
+
+export const getOpenRoommateConversationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openRoommateConversation>>, TError,OpenRoommateConversationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof openRoommateConversation>>, TError,OpenRoommateConversationMutationVariables, TContext> => {
+
+const mutationKey = getOpenRoommateConversationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof openRoommateConversation>>, OpenRoommateConversationMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  openRoommateConversation(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OpenRoommateConversationMutationResult = NonNullable<Awaited<ReturnType<typeof openRoommateConversation>>>
+
+    export type OpenRoommateConversationMutationError = ErrorType<unknown>
+    export type OpenRoommateConversationMutationVariables = {id: number}
+
+    export const useOpenRoommateConversation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openRoommateConversation>>, TError,OpenRoommateConversationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof openRoommateConversation>>,
+        TError,
+        OpenRoommateConversationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOpenRoommateConversationMutationOptions(options), queryClient);
+    }
+
+export const getModerateRoommateUrl = (username: string,) => {
+
+
+
+
+  return `/api/admin/roommates/${username}/visibility`
+}
+
+export const moderateRoommate = async (username: string,
+    moderateRoommateBody: ModerateRoommateBody, options?: Parameters<typeof customFetch>[1]): Promise<RoommateMessage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RoommateMessage>(getModerateRoommateUrl(username),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moderateRoommateBody)
+  }
+);}
+
+
+
+
+
+export const getModerateRoommateMutationKey = () => ['moderateRoommate'] as const;
+
+export const getModerateRoommateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moderateRoommate>>, TError,ModerateRoommateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof moderateRoommate>>, TError,ModerateRoommateMutationVariables, TContext> => {
+
+const mutationKey = getModerateRoommateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof moderateRoommate>>, ModerateRoommateMutationVariables> = (props) => {
+          const {username,data} = props ?? {};
+
+          return  moderateRoommate(username,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ModerateRoommateMutationResult = NonNullable<Awaited<ReturnType<typeof moderateRoommate>>>
+    export type ModerateRoommateMutationBody = BodyType<ModerateRoommateBody>
+    export type ModerateRoommateMutationError = ErrorType<unknown>
+    export type ModerateRoommateMutationVariables = {username: string;data: BodyType<ModerateRoommateBody>}
+
+    export const useModerateRoommate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moderateRoommate>>, TError,ModerateRoommateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof moderateRoommate>>,
+        TError,
+        ModerateRoommateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getModerateRoommateMutationOptions(options), queryClient);
+    }
 
 export const getGetCommerceAccountUrl = () => {
 

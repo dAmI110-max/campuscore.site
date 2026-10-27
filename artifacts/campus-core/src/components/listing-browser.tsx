@@ -120,7 +120,9 @@ export function ListingBrowser({ meta, signedIn }: { meta: KindMeta; signedIn: b
 
   const urlPriceErr = priceError(f.minPrice, f.maxPrice);
   const { data, isLoading, error, refetch, isFetching } = useListListings(params, {
-    query: { queryKey: getListListingsQueryKey(params), placeholderData: (prev) => prev, enabled: !pErr && !urlPriceErr },
+    // Never present a previous filter's empty result while this request fails
+    // or silently retries. Give students an immediate, explicit retry action.
+    query: { queryKey: getListListingsQueryKey(params), retry: false, enabled: !pErr && !urlPriceErr },
   });
   const panelCount = [f.universityId, f.location, f.minPrice, f.maxPrice, f.condition].filter(Boolean).length;
   const activeCount = panelCount + (f.category ? 1 : 0);
@@ -198,7 +200,7 @@ export function ListingBrowser({ meta, signedIn }: { meta: KindMeta; signedIn: b
       <div className="mt-6">
         {blockedByPrice ? (
           <EmptyState icon={<SlidersHorizontal className="h-5 w-5" />} title="Check the price range">{pErr || urlPriceErr}</EmptyState>
-        ) : isLoading ? <CardGridSkeleton /> : error ? <ErrorState error={error} onRetry={() => refetch()} /> : !data || data.items.length === 0 ? (
+        ) : error ? <ErrorState error={error} onRetry={() => refetch()} title="Listings could not be loaded" /> : isLoading || (isFetching && !data?.items.length) ? <CardGridSkeleton /> : !data || data.items.length === 0 ? (
           filtered ? (
             <EmptyState icon={<Search className="h-5 w-5" />} title="Nothing matches those filters" action={<Button variant="outline" onClick={reset}>Clear filters</Button>}>
               Try a broader search, another category or a different school.

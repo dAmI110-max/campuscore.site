@@ -23,6 +23,7 @@ import PeopleSearch from "@/pages/people-search";
 import Messages from "@/pages/messages";
 import Notifications from "@/pages/notifications";
 import Safety from "@/pages/safety";
+import Roommates from "@/pages/roommates";
 import AdminSafety from "@/pages/admin-safety";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
@@ -41,11 +42,10 @@ const clerkPubKey = publishableKeyFromHost(
 );
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-const clerkProxyUrl =
-  import.meta.env.VITE_CLERK_PROXY_URL ||
-  (import.meta.env.PROD
-    ? `${window.location.origin}/api/__clerk`
-    : undefined);
+// A direct Clerk production domain and a managed proxy are different setups.
+// Only use a proxy when configured; a production Vite build is not proof that
+// the current Clerk instance has a proxy domain.
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 function stripBase(path: string): string {
   return basePath && path.startsWith(basePath)
@@ -78,8 +78,8 @@ const clerkAppearance = {
     borderRadius: "0.75rem",
   },
   elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-card border border-border rounded-2xl w-[440px] max-w-full overflow-hidden shadow-none",
+    rootBox: "w-full min-w-0 max-w-full flex justify-center",
+    cardBox: "bg-card border border-border rounded-2xl w-full min-w-0 max-w-[440px] overflow-hidden shadow-none",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "font-display text-2xl font-bold text-foreground",
@@ -162,6 +162,7 @@ function Router() {
           <Route path="/messages"><RequireAuth><Messages /></RequireAuth></Route>
           <Route path="/messages/:id"><RequireAuth><Messages /></RequireAuth></Route>
           <Route path="/notifications"><RequireAuth><Notifications /></RequireAuth></Route>
+          <Route path="/roommates"><RequireAuth><Roommates /></RequireAuth></Route>
           <Route path="/safety"><RequireAuth><Safety /></RequireAuth></Route>
           <Route path="/settings"><RequireAuth><Settings /></RequireAuth></Route>
           <Route path="/admin"><RequireAuth><Admin /></RequireAuth></Route>

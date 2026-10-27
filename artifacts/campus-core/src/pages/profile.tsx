@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useUser } from "@clerk/react";
 import { Link, useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, X } from "lucide-react";
@@ -17,6 +18,7 @@ import { errMessage, initials } from "@/lib/format";
 const USER_RE = /^[a-z][a-z0-9_]{2,23}$/;
 
 export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
+  const { user: identityUser } = useUser();
   const { data: profile, isLoading, error, refetch } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
   const save = useSaveProfile();
   const qc = useQueryClient();
@@ -105,7 +107,11 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
       </PageHeader>
       <form onSubmit={submit} className="space-y-6">
         <section className="space-y-5 rounded-2xl border bg-card p-5 sm:p-6">
-          <AvatarPicker value={avatarPath} onChange={setAvatarPath} fallback={initials(displayName)} onUploadingChange={setUploading} />
+          <AvatarPicker value={avatarPath} onChange={setAvatarPath} previewUrl={identityUser?.hasImage ? identityUser.imageUrl : undefined} fallback={initials(displayName)} onUploadingChange={setUploading} />
+          {identityUser?.primaryEmailAddress && <p className="break-all text-sm text-muted-foreground" data-testid="text-account-email">
+            Sign-in email: {identityUser.primaryEmailAddress.emailAddress}
+            <span className="mt-1 block text-xs">Private to you. Campus Core profiles use your account ID, not an email match.</span>
+          </p>}
           <div className="grid gap-5 sm:grid-cols-2">
             <div><Label htmlFor="dn">Display name</Label><Input id="dn" className="mt-1.5" value={displayName} maxLength={80} onChange={(e) => setDisplayName(e.target.value)} data-testid="input-display-name" /></div>
             <div>

@@ -53,7 +53,7 @@ export function ImagePicker({ value, onChange, max = 6, onUploadingChange }: { v
   );
 }
 
-export function AvatarPicker({ value, onChange, fallback, onUploadingChange }: { value: string | null; onChange: (v: string | null) => void; fallback: string; onUploadingChange?: (busy: boolean) => void }) {
+export function AvatarPicker({ value, onChange, fallback, previewUrl, onUploadingChange }: { value: string | null; onChange: (v: string | null) => void; fallback: string; previewUrl?: string; onUploadingChange?: (busy: boolean) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const { upload, busy, error } = useImageUpload();
   useEffect(() => { onUploadingChange?.(busy); }, [busy, onUploadingChange]);
@@ -66,7 +66,7 @@ export function AvatarPicker({ value, onChange, fallback, onUploadingChange }: {
   return (
     <div className="flex items-center gap-4">
       <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border bg-accent font-display text-xl font-semibold text-accent-foreground">
-        {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : value ? <img src={storageUrl(value)} alt="Your avatar" className="h-full w-full object-cover" /> : fallback}
+        {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : value || previewUrl ? <img src={value ? storageUrl(value) : previewUrl} alt="Your avatar" className="h-full w-full object-cover" /> : fallback}
       </div>
       <div>
         <div className="flex flex-wrap gap-2">

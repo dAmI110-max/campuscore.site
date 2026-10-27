@@ -38,6 +38,10 @@ await access(path.join(root, sandbox.root, sandbox.outputDirectory, "index.html"
 process.env.NODE_ENV = "production";
 process.env.VERCEL = "1";
 process.env.CRON_SECRET = ""; // No actual cleanup is permitted in this smoke.
+process.env.ROOMMATE_FINDER_ENABLED = "false";
+// Deliberately broken optional storage config must not crash unrelated APIs.
+delete process.env.REPL_ID;
+process.env.GCS_CREDENTIALS_JSON = "invalid-json-local-smoke-fixture";
 // Synthetic test fixtures in this process only; no provider request is allowed.
 process.env.PAYMENTS_ENABLED = "true";
 process.env.PAYSTACK_MODE = "test";
@@ -60,6 +64,9 @@ await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
 try {
   assert.equal((await fetch(`${base}/api/healthz`)).status, 200);
+  assert.equal((await fetch(`${base}/api/listings?kind=marketplace&sort=price-low`)).status, 200);
+  assert.equal((await fetch(`${base}/api/listings?minPrice=500&maxPrice=100`)).status, 400);
+  assert.equal((await fetch(`${base}/api/roommates`)).status, 401);
   assert.equal((await fetch(`${base}/api/not-found`)).status, 404);
   assert.equal((await fetch(`${base}/account`)).status, 404, "SPA is served by CDN, not the function");
   assert.equal((await fetch(`${base}/api/internal/maintenance/uploads`)).status, 503);

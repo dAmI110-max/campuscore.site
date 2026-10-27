@@ -1,0 +1,208 @@
+openapi: 3.1.0
+info: { title: Roommates, version: 1.0.0 }
+paths:
+  /roommates:
+    get:
+      operationId: listRoommates
+      parameters:
+        - { in: query, name: q, schema: { type: string, maxLength: 100 } }
+        - { in: query, name: universityId, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: campus, schema: { type: string, maxLength: 100 } }
+        - { in: query, name: minBudget, schema: { type: integer, minimum: 0, maximum: 100000000 } }
+        - { in: query, name: maxBudget, schema: { type: integer, minimum: 0, maximum: 100000000 } }
+        - { in: query, name: accommodationType, schema: { type: string, enum: [hostel, flat, self-contained, any] } }
+        - { in: query, name: sharing, schema: { type: string, enum: [private, shared, either] } }
+        - { in: query, name: smoking, schema: { type: string, enum: [non-smoker, smoker, either] } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, maximum: 10000 } }
+      responses:
+        "200":
+          description: Authenticated discovery, with visibility and block rules enforced
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, page]
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/RoommateCard" } }
+                  total: { type: integer }
+                  page: { type: integer }
+  /roommates/mine:
+    get:
+      operationId: getMyRoommate
+      responses:
+        "200":
+          description: Own profile, or null before creation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profile]
+                properties:
+                  profile:
+                    anyOf:
+                      - { $ref: "#/components/schemas/RoommateInput" }
+                      - { type: "null" }
+    put:
+      operationId: saveMyRoommate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoommateInput" }
+      responses:
+        "200":
+          description: Saved profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoommateInput" }
+  /roommates/interests:
+    get:
+      operationId: getRoommateInterests
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, maximum: 10000 } }
+      responses:
+        "200":
+          description: Only incoming and outgoing requests for the actor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, page, total]
+                properties:
+                  page: { type: integer }
+                  total: { type: integer }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, username, displayName, incoming, status, canMessage]
+                      properties:
+                        id: { type: integer }
+                        username: { type: string }
+                        displayName: { type: string }
+                        incoming: { type: boolean }
+                        canMessage: { type: boolean }
+                        status: { type: string, enum: [pending, accepted, declined, cancelled] }
+    post:
+      operationId: sendRoommateInterest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username: { type: string, pattern: "^[a-z][a-z0-9_]{2,23}$" }
+      responses:
+        "200":
+          description: Interest persisted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoommateMessage" }
+  /roommates/interests/{id}:
+    patch:
+      operationId: respondRoommateInterest
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [accept, decline, cancel] }
+      responses:
+        "200":
+          description: Authorized transition persisted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoommateMessage" }
+  /roommates/interests/{id}/conversation:
+    post:
+      operationId: openRoommateConversation
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: Existing or new private direct conversation after accepted interest
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id: { type: integer }
+  /admin/roommates/{username}/visibility:
+    patch:
+      operationId: moderateRoommate
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hidden, reason]
+              properties:
+                hidden: { type: boolean }
+                reason: { type: string, minLength: 5, maxLength: 1000 }
+      responses:
+        "200":
+          description: Staff visibility decision recorded in audit log
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoommateMessage" }
+components:
+  schemas:
+    RoommateMessage:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+    RoommateInput:
+      type: object
+      additionalProperties: false
+      required: [universityId, campus, accommodationType, budgetMin, budgetMax, moveInDate, sharing, smoking, cleanliness, sleep, study, about, visibleFields, active]
+      properties:
+        universityId: { type: integer, minimum: 1 }
+        campus: { type: string, minLength: 2, maxLength: 100 }
+        accommodationType: { type: string, enum: [hostel, flat, self-contained, any] }
+        budgetMin: { type: integer, minimum: 0, maximum: 100000000 }
+        budgetMax: { type: integer, minimum: 0, maximum: 100000000 }
+        moveInDate: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        sharing: { type: string, enum: [private, shared, either] }
+        smoking: { type: string, enum: [non-smoker, smoker, either] }
+        cleanliness: { type: string, enum: [tidy, flexible] }
+        sleep: { type: string, enum: [early, late, flexible] }
+        study: { type: string, enum: [quiet, social, flexible] }
+        about: { type: string, maxLength: 800 }
+        visibleFields:
+          type: array
+          maxItems: 5
+          uniqueItems: true
+          items: { type: string, enum: [campus, budget, moveInDate, preferences, about] }
+        active: { type: boolean }
+    RoommateCard:
+      type: object
+      required: [username, displayName, universityId, universityName, accommodationType, reasons]
+      properties:
+        username: { type: string }
+        displayName: { type: string }
+        universityId: { type: integer }
+        universityName: { type: string }
+        accommodationType: { type: string }
+        campus: { type: string }
+        budgetMin: { type: integer }
+        budgetMax: { type: integer }
+        moveInDate: { type: string }
+        sharing: { type: string }
+        smoking: { type: string }
+        cleanliness: { type: string }
+        sleep: { type: string }
+        study: { type: string }
+        about: { type: string }
+        reasons: { type: array, items: { type: string } }

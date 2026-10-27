@@ -7,7 +7,7 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function Frame({ children, title, text }: { children: React.ReactNode; title: string; text: string }) {
   return (
-    <div className="grid min-h-[calc(100dvh-10rem)] items-center gap-10 lg:grid-cols-2">
+    <div className="grid min-h-[calc(100dvh-10rem)] min-w-0 grid-cols-1 items-center gap-10 lg:grid-cols-2">
       <div className="hidden lg:block">
         <h1 className="font-display text-5xl font-extrabold leading-tight">{title}</h1>
         <p className="mt-4 max-w-md text-lg text-muted-foreground">{text}</p>
@@ -16,7 +16,7 @@ function Frame({ children, title, text }: { children: React.ReactNode; title: st
         </div>
         <p className="mt-6 text-sm text-muted-foreground">Not ready? <Link href="/" className="font-semibold text-primary hover:underline">Look around first</Link></p>
       </div>
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex w-full min-w-0 flex-col items-center gap-6">
         <div className="lg:hidden"><Brand /></div>
         {children}
       </div>

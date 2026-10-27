@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { useClerk } from "@clerk/react";
-import { Bookmark, Compass, LogOut, Menu, Plus, Settings, ShieldCheck, User, FileText, AlertTriangle, MessageCircle, Bell, Users, ShieldAlert, Store, BarChart3 } from "lucide-react";
+import { useClerk, useUser } from "@clerk/react";
+import { Bookmark, Compass, LogOut, Menu, Plus, Settings, ShieldCheck, User, FileText, AlertTriangle, MessageCircle, Bell, Users, ShieldAlert, Store, BarChart3, BedDouble } from "lucide-react";
 import { useGetSocialSummary, getGetSocialSummaryQueryKey } from "@workspace/api-client-react";
 import { useVisible } from "@/hooks/use-visible";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loc] = useLocation();
   const p = me.profile;
+  const { user } = useUser();
+  // Private own-header fallback only: app profile values always win; Clerk values are never stored as avatarPath.
+  const ownName = p?.displayName || (me.signedIn ? user?.fullName || user?.username : undefined) || undefined;
+  const ownAvatar = storageUrl(p?.avatarPath) ?? (me.signedIn && user?.hasImage ? user.imageUrl : undefined);
   const isAuthPage = loc.startsWith("/sign-in") || loc.startsWith("/sign-up");
   const visible = useVisible();
   const social = useGetSocialSummary({ query: { queryKey: getGetSocialSummaryQueryKey(), enabled: me.signedIn && !!p, refetchInterval: me.signedIn && visible ? 15_000 : false, refetchIntervalInBackground: false } });
@@ -56,6 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {KINDS.map((k) => (
                   <MobileLink key={k.kind} href={k.path} icon={<k.icon className="h-4 w-4" />} onClick={() => setOpen(false)}>{k.label}</MobileLink>
                 ))}
+                <MobileLink href="/roommates" icon={<BedDouble className="h-4 w-4" />} onClick={() => setOpen(false)}>Roommates</MobileLink>
                 {me.signedIn && (
                   <>
                     <div className="my-2 border-t" />
@@ -73,6 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <nav className="ml-4 hidden flex-1 items-center gap-0.5 overflow-x-auto lg:flex">
             <NavLink href="/explore">Explore</NavLink>
             {KINDS.map((k) => <NavLink key={k.kind} href={k.path}>{k.label}</NavLink>)}
+            <NavLink href="/roommates">Roommates</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2">
             {me.signedIn ? (
@@ -86,14 +92,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <DropdownMenuTrigger asChild>
                     <button className="rounded-full ring-offset-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" data-testid="button-user-menu">
                       <Avatar className="h-9 w-9 border">
-                        <AvatarImage src={storageUrl(p?.avatarPath)} alt="" />
-                        <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">{initials(p?.displayName)}</AvatarFallback>
+                        <AvatarImage src={ownAvatar} alt="" />
+                        <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">{initials(ownName)}</AvatarFallback>
                       </Avatar>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="font-normal">
-                      <p className="truncate font-semibold">{p?.displayName || "Your account"}</p>
+                      <p className="truncate font-semibold">{ownName || "Your account"}</p>
                       {p?.username && <p className="truncate text-xs text-muted-foreground">@{p.username}</p>}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -104,6 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link></DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild><Link href="/people"><Users className="mr-2 h-4 w-4" />People</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/roommates" data-testid="link-menu-roommates"><BedDouble className="mr-2 h-4 w-4" />Roommates</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/messages"><MessageCircle className="mr-2 h-4 w-4" />Messages<Count n={unreadMsgs} /></Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/notifications"><Bell className="mr-2 h-4 w-4" />Notifications<Count n={unreadNotes} /></Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link href="/safety"><ShieldAlert className="mr-2 h-4 w-4" />Safety</Link></DropdownMenuItem>

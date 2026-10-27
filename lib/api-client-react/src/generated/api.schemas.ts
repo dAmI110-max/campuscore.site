@@ -470,6 +470,127 @@ export interface ModerationInput {
   reason: string;
 }
 
+export interface RoommateMessage {
+  message: string;
+}
+
+export type RoommateInputAccommodationType = typeof RoommateInputAccommodationType[keyof typeof RoommateInputAccommodationType];
+
+
+export const RoommateInputAccommodationType = {
+  hostel: 'hostel',
+  flat: 'flat',
+  'self-contained': 'self-contained',
+  any: 'any',
+} as const;
+
+export type RoommateInputSharing = typeof RoommateInputSharing[keyof typeof RoommateInputSharing];
+
+
+export const RoommateInputSharing = {
+  private: 'private',
+  shared: 'shared',
+  either: 'either',
+} as const;
+
+export type RoommateInputSmoking = typeof RoommateInputSmoking[keyof typeof RoommateInputSmoking];
+
+
+export const RoommateInputSmoking = {
+  'non-smoker': 'non-smoker',
+  smoker: 'smoker',
+  either: 'either',
+} as const;
+
+export type RoommateInputCleanliness = typeof RoommateInputCleanliness[keyof typeof RoommateInputCleanliness];
+
+
+export const RoommateInputCleanliness = {
+  tidy: 'tidy',
+  flexible: 'flexible',
+} as const;
+
+export type RoommateInputSleep = typeof RoommateInputSleep[keyof typeof RoommateInputSleep];
+
+
+export const RoommateInputSleep = {
+  early: 'early',
+  late: 'late',
+  flexible: 'flexible',
+} as const;
+
+export type RoommateInputStudy = typeof RoommateInputStudy[keyof typeof RoommateInputStudy];
+
+
+export const RoommateInputStudy = {
+  quiet: 'quiet',
+  social: 'social',
+  flexible: 'flexible',
+} as const;
+
+export type RoommateInputVisibleFieldsItem = typeof RoommateInputVisibleFieldsItem[keyof typeof RoommateInputVisibleFieldsItem];
+
+
+export const RoommateInputVisibleFieldsItem = {
+  campus: 'campus',
+  budget: 'budget',
+  moveInDate: 'moveInDate',
+  preferences: 'preferences',
+  about: 'about',
+} as const;
+
+export interface RoommateInput {
+  /** @minimum 1 */
+  universityId: number;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  campus: string;
+  accommodationType: RoommateInputAccommodationType;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  budgetMin: number;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  budgetMax: number;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  moveInDate: string;
+  sharing: RoommateInputSharing;
+  smoking: RoommateInputSmoking;
+  cleanliness: RoommateInputCleanliness;
+  sleep: RoommateInputSleep;
+  study: RoommateInputStudy;
+  /** @maxLength 800 */
+  about: string;
+  /** @maxItems 5 */
+  visibleFields: RoommateInputVisibleFieldsItem[];
+  active: boolean;
+}
+
+export interface RoommateCard {
+  username: string;
+  displayName: string;
+  universityId: number;
+  universityName: string;
+  accommodationType: string;
+  campus?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  moveInDate?: string;
+  sharing?: string;
+  smoking?: string;
+  cleanliness?: string;
+  sleep?: string;
+  study?: string;
+  about?: string;
+  reasons: string[];
+}
+
 export type CommerceCheckoutInputKind = typeof CommerceCheckoutInputKind[keyof typeof CommerceCheckoutInputKind];
 
 
@@ -939,6 +1060,141 @@ export interface AdminReportPage {
   page: number;
   pageSize: number;
 }
+
+export type ListRoommatesParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+/**
+ * @minimum 1
+ */
+universityId?: number;
+/**
+ * @maxLength 100
+ */
+campus?: string;
+/**
+ * @minimum 0
+ * @maximum 100000000
+ */
+minBudget?: number;
+/**
+ * @minimum 0
+ * @maximum 100000000
+ */
+maxBudget?: number;
+accommodationType?: ListRoommatesAccommodationType;
+sharing?: ListRoommatesSharing;
+smoking?: ListRoommatesSmoking;
+/**
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: number;
+};
+
+export type ListRoommatesAccommodationType = typeof ListRoommatesAccommodationType[keyof typeof ListRoommatesAccommodationType];
+
+
+export const ListRoommatesAccommodationType = {
+  hostel: 'hostel',
+  flat: 'flat',
+  'self-contained': 'self-contained',
+  any: 'any',
+} as const;
+
+export type ListRoommatesSharing = typeof ListRoommatesSharing[keyof typeof ListRoommatesSharing];
+
+
+export const ListRoommatesSharing = {
+  private: 'private',
+  shared: 'shared',
+  either: 'either',
+} as const;
+
+export type ListRoommatesSmoking = typeof ListRoommatesSmoking[keyof typeof ListRoommatesSmoking];
+
+
+export const ListRoommatesSmoking = {
+  'non-smoker': 'non-smoker',
+  smoker: 'smoker',
+  either: 'either',
+} as const;
+
+export type ListRoommates200 = {
+  items: RoommateCard[];
+  total: number;
+  page: number;
+};
+
+export type GetMyRoommate200 = {
+  profile: RoommateInput | null;
+};
+
+export type GetRoommateInterestsParams = {
+/**
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: number;
+};
+
+export type GetRoommateInterests200ItemsItemStatus = typeof GetRoommateInterests200ItemsItemStatus[keyof typeof GetRoommateInterests200ItemsItemStatus];
+
+
+export const GetRoommateInterests200ItemsItemStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
+  cancelled: 'cancelled',
+} as const;
+
+export type GetRoommateInterests200ItemsItem = {
+  id: number;
+  username: string;
+  displayName: string;
+  incoming: boolean;
+  canMessage: boolean;
+  status: GetRoommateInterests200ItemsItemStatus;
+};
+
+export type GetRoommateInterests200 = {
+  page: number;
+  total: number;
+  items: GetRoommateInterests200ItemsItem[];
+};
+
+export type SendRoommateInterestBody = {
+  /** @pattern ^[a-z][a-z0-9_]{2,23}$ */
+  username: string;
+};
+
+export type RespondRoommateInterestBodyAction = typeof RespondRoommateInterestBodyAction[keyof typeof RespondRoommateInterestBodyAction];
+
+
+export const RespondRoommateInterestBodyAction = {
+  accept: 'accept',
+  decline: 'decline',
+  cancel: 'cancel',
+} as const;
+
+export type RespondRoommateInterestBody = {
+  action: RespondRoommateInterestBodyAction;
+};
+
+export type OpenRoommateConversation200 = {
+  id: number;
+};
+
+export type ModerateRoommateBody = {
+  hidden: boolean;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason: string;
+};
 
 export type GetCommerceAdminParams = {
 /**

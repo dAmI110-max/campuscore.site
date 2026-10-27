@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "1wCWlRrxYU731oqmSRmgj"
+uri = "file://docs/PRODUCTION-READINESS-REVIEW.md"
+type = "text"
+title = "Campus Core readiness report"
+description = "Confirmed live failures, exact changed files, Vercel environment checklist, test results, and approval gates. No deployment or production migration performed."
+logical_id = "f2099e16-9a6d-4333-a6d6-ad35b51ba584"
+content_hash = "sha256:9dcc3c79d3f6f51d816bfd6e68e553464ad526f8835ee4d14ad163fc446822f3"
+size = 19021
+mtime_ms = 1793125117610
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:5455b925-7edb-44ba-9840-d4316b55fe3a/f2099e16-9a6d-4333-a6d6-ad35b51ba584/cf002825-5344-4212-bdc7-1f48ecb7d57f"
+storage_version_token = "1793125137577681"
+content_type = "text/markdown"
