@@ -30,7 +30,7 @@ The API reuses the existing esbuild/Pino bundle and its separate serverless entr
 
 Top-level rewrites route bare `/api` and `/api/(.*)` to `api-server`, then everything else to `campus-core`. Services preserve the incoming URL. Express already registers `/api`, the `/api/__clerk` proxy, and `/api/commerce/webhooks/paystack` raw-body capture: do not strip the prefix. Unknown API routes must return JSON 404, not frontend HTML. Each static service owns its SPA fallback and asset handling. The browser already uses same-origin `/api`; no API-origin code change or CORS expansion is needed.
 
-**Confirmed service bindings: none.** Browser-to-API traffic is public same-origin traffic, not a server binding. Backend dependencies are external PostgreSQL, Clerk, GCS, directory sources, and optionally Paystack. The Replit storage sidecar is development-only, not another Vercel service.
+**Confirmed service bindings: none.** Browser-to-API traffic is public same-origin traffic, not a server binding. Backend dependencies are external PostgreSQL, Clerk, Google Cloud Storage (or compatible), directory sources, and optionally Paystack.
 
 `mockup-sandbox` has no public rewrite and no caller binding. Production imports/requests do not depend on it. This makes it internal/unreachable through public ingress, **not an authenticated staff page**. No staff-browser route is provided. Its static renderer builds, but Vite live editing/HMR remains workspace-only; use the existing managed preview workflow for design work.
 
@@ -68,7 +68,7 @@ Build output contains `VITE_` values. Never put a secret in a `VITE_` variable. 
 - `PAYMENTS_ENABLED=false`, `PAYSTACK_MODE=test`, `PAYSTACK_WEBHOOKS_ENABLED=false`, `PAYSTACK_LIVE_CHECKOUT_ENABLED=false`.
 - `PAYSTACK_CALLBACK_URL`, if testing, must be the actual reachable HTTPS preview origin plus `/payment/callback`.
 
-Vercel supplies `VERCEL=1` and production `NODE_ENV`. `PORT` is not used by the function. Do not copy Replit-only environment values such as `REPL_ID` or sidecar endpoints into Vercel; external GCS must be selected there. `SESSION_SECRET` is not required by this Clerk implementation.
+Vercel supplies `VERCEL=1` and production `NODE_ENV`. `PORT` is not used by the function. Do not copy development-only environment values into Vercel; configure standard GCS credentials (`GCS_CREDENTIALS_JSON`) there. `SESSION_SECRET` is not required by this Clerk implementation.
 
 ## Database, identities and storage: no automatic migration
 
@@ -78,7 +78,7 @@ Use the backup/empty-staging-restore procedure and metadata-only role/RLS checks
 
 The function shares a pool within a warm instance, caps it at three connections, uses a short idle timeout/connection timeout, and registers the pool with `attachDatabasePool`. Scaling still creates multiple instances; configure the provider pooler's total connection budget and place the function near the database.
 
-Preserve Clerk authentication. The current project uses Replit-managed Clerk: confirm authorized access to the intended tenant, keys, proxy support and Vercel hostname configuration before cutover. Do not assume Replit will automatically transfer or swap identity keys on Vercel. Configure approved origins/redirects/provider callbacks using the appropriate managed settings. Check existing account IDs privately against stored profile ownership; a database restore alone does not migrate Clerk users. Do not create a new tenant or rewrite user IDs silently.
+Preserve Clerk authentication. Confirm authorized access to the intended Clerk tenant, keys, proxy support and Vercel hostname configuration before cutover. Configure approved origins/redirects/provider callbacks in Clerk. Check existing account IDs privately against stored profile ownership; a database restore alone does not migrate Clerk users. Do not create a new tenant or rewrite user IDs silently.
 
 GCS needs bucket-scoped object create/get/update/delete permissions, private service-account signing credentials, and CORS for the exact allowed application origin(s). Upload bytes already go to signed GCS URLs, avoiding Vercel's request-body limit. Keep object keys and ACL metadata when copying storage; deployment does not copy files. Verify counts, checksums and controlled existing images. Existing file-download responses and image finalization are still subject to Vercel function size/duration limits.
 
