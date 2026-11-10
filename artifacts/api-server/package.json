@@ -31,7 +31,8 @@
     "pino": "^9.14.0",
     "pino-http": "^10.5.0",
     "sharp": "^0.35.5",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@supabase/supabase-js": "^2.49.1"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
