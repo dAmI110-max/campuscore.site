@@ -9,6 +9,7 @@ import { addLagosCalendarMonth } from "./commerce";
 
 export const SITE_PREMIUM_PRICE_MINOR = 300_000;
 export const SELLER_PREMIUM_PRICE_MINOR = 200_000;
+export const PREMIUM_BUNDLE_PRICE_MINOR = 450_000; // ₦500 off vs 2000+3000
 
 /** Soft cost controls — adjust via env without redeploying product rules. */
 export const CORE_AI_DAILY_MESSAGE_LIMIT = Math.max(
@@ -18,6 +19,11 @@ export const CORE_AI_DAILY_MESSAGE_LIMIT = Math.max(
 export const CORE_AI_MAX_OUTPUT_TOKENS = Math.min(
   4096,
   Math.max(256, Number(process.env.CORE_AI_MAX_OUTPUT_TOKENS || 1200) || 1200),
+);
+/** Soft monthly token budget (prompt + completion) per user — Lagos calendar month. */
+export const CORE_AI_MONTHLY_TOKEN_LIMIT = Math.max(
+  10_000,
+  Number(process.env.CORE_AI_MONTHLY_TOKEN_LIMIT || 120_000) || 120_000,
 );
 
 const XAI_URL = "https://api.x.ai/v1/chat/completions";
@@ -50,9 +56,9 @@ export async function hasActiveSitePremium(userId: string, now = new Date()): Pr
     .where(
       and(
         eq(orders.buyerId, userId),
-        eq(orders.kind, "site_premium"),
+        sql`${orders.kind} in ('site_premium', 'premium_bundle')`,
         eq(orders.status, "paid"),
-        eq(orders.provider, "paystack"),
+        sql`${orders.provider} in ('paystack', 'paystack_test')`,
       ),
     )
     .orderBy(desc(orders.verifiedAt))
@@ -104,6 +110,31 @@ export async function recordUsage(
       completion_tokens = core_ai_usage.completion_tokens + excluded.completion_tokens,
       updated_at = now()
   `);
+}
+
+
+export async function assertMonthlyTokenBudget(userId: string): Promise<{ used: number; limit: number }> {
+  const monthStart = lagosMonthStart();
+  const result = await db.execute(sql`
+    select coalesce(sum(prompt_tokens + completion_tokens), 0)::int as tokens
+    from core_ai_usage
+    where user_id = ${userId} and day_lagos >= ${monthStart}::date
+  `);
+  const rows = (result as unknown as { rows?: { tokens: number }[] }).rows
+    ?? (Array.isArray(result) ? (result as { tokens: number }[]) : []);
+  const used = Number(rows[0]?.tokens ?? 0);
+  if (used >= CORE_AI_MONTHLY_TOKEN_LIMIT) {
+    throw new HttpError(
+      429,
+      `Monthly Core AI token budget reached (${CORE_AI_MONTHLY_TOKEN_LIMIT.toLocaleString()} tokens). Resets next Lagos calendar month.`,
+    );
+  }
+  return { used, limit: CORE_AI_MONTHLY_TOKEN_LIMIT };
+}
+
+function lagosMonthStart(d = new Date()): string {
+  const local = new Date(d.getTime() + 3_600_000);
+  return `${local.toISOString().slice(0, 7)}-01`;
 }
 
 export async function callCoreAi(
