@@ -31,6 +31,7 @@ import AdminAccess from "@/pages/admin-access";
 import AdminCommerce from "@/pages/admin-commerce";
 import PaymentCallback from "@/pages/payment-callback";
 import Account from "@/pages/account";
+import CoreAiPage from "@/pages/core-ai";
 import { SignInPage, SignUpPage } from "@/pages/auth";
 import { KINDS } from "@/lib/kinds";
 
@@ -170,6 +171,7 @@ function Router() {
           <Route path="/admin/safety"><RequireAuth><AdminSafety /></RequireAuth></Route>
           <Route path="/admin/commerce"><RequireAuth><AdminCommerce /></RequireAuth></Route>
           <Route path="/account"><RequireProfile><Account /></RequireProfile></Route>
+          <Route path="/study/core-ai"><RequireAuth><CoreAiPage /></RequireAuth></Route>
           <Route path="/payment/callback" component={PaymentCallback} />
           <Route component={NotFound} />
         </Switch>
