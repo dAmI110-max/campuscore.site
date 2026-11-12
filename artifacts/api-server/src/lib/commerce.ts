@@ -84,8 +84,13 @@ export async function commerceAccount(user: Profile) {
   const launch = await commerceLaunch();
   const latestPremium = user.commerceRole === "seller"
     ? (await db.select({ verifiedAt: orders.verifiedAt }).from(orders)
-      .where(and(eq(orders.buyerId, user.id), eq(orders.kind, "premium"), eq(orders.provider, "paystack"),
-        eq(orders.status, "paid"), isNotNull(orders.verifiedAt)))
+      .where(and(
+        eq(orders.buyerId, user.id),
+        sql`${orders.kind} in ('premium', 'premium_bundle')`,
+        sql`${orders.provider} in ('paystack', 'paystack_test')`,
+        eq(orders.status, "paid"),
+        isNotNull(orders.verifiedAt),
+      ))
       .orderBy(desc(orders.verifiedAt)).limit(1))[0]
     : undefined;
   const premiumUntil = latestPremium?.verifiedAt ? addLagosCalendarMonth(latestPremium.verifiedAt) : null;
