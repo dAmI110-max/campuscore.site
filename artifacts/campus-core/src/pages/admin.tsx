@@ -72,7 +72,7 @@ export default function Admin() {
         </TabsContent>
         <TabsContent value="listings"><ListingTools onAct={open} /></TabsContent>
         <TabsContent value="directory">
-          {me.profile?.role === "owner" && <OfficialDirectoryImport />}
+          {me.profile?.role === "owner" && <><OfficialDirectoryImport /><BulkDirectoryImport /></>}
           <DirectoryManager entries={data.directory} />
         </TabsContent>
         <TabsContent value="audit"><Records items={data.audit} empty="No moderation actions recorded yet." /></TabsContent>
@@ -121,6 +121,103 @@ function OfficialDirectoryImport() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+type BulkResult = {
+  committed: boolean; rowsRead: number; newFaculties: number; newDepartments: number; alreadyExist: number; skippedInactive: number;
+  partialMatches: { input: string; matched: string }[]; errors: { line: number; message: string }[]; message: string;
+};
+async function postBulkDirectory(csv: string, commit: boolean): Promise<BulkResult> {
+  const response = await fetch("/api/admin/directory/bulk", {
+    method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csv, commit }),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.error ?? "The upload could not be processed. Please try again.");
+  return data as BulkResult;
+}
+
+function BulkDirectoryImport() {
+  const [csv, setCsv] = useState("");
+  const [checkedCsv, setCheckedCsv] = useState<string | null>(null);
+  const [result, setResult] = useState<BulkResult | null>(null);
+  const [busy, setBusy] = useState<"check" | "import" | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const client = useQueryClient();
+  const { toast } = useToast();
+  const unchanged = checkedCsv === csv;
+  const canImport = !!result && unchanged && !result.committed && result.errors.length === 0 && result.newFaculties + result.newDepartments > 0;
+
+  async function run(commit: boolean) {
+    setBusy(commit ? "import" : "check");
+    setFailure(null);
+    try {
+      const next = await postBulkDirectory(csv, commit);
+      setResult(next);
+      setCheckedCsv(csv);
+      if (next.committed) {
+        client.invalidateQueries({ queryKey: getGetAdminOverviewQueryKey() });
+        client.invalidateQueries({ queryKey: getGetDirectoryQueryKey() });
+        toast({ title: "Directory updated", description: next.message });
+      }
+    } catch (error) {
+      setFailure(errMessage(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mb-5 rounded-xl border bg-card p-4" data-testid="card-bulk-directory">
+      <h2 className="font-medium">Add faculties and departments (CSV)</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Owner-only. Paste a CSV or choose a file with the columns <span className="font-mono">university,faculty,department,source_url</span>.
+        Every row needs the official page where the faculty or department is listed. Nothing is saved until you check the upload and then confirm the import.
+        Existing entries are never changed or reactivated.
+      </p>
+      <Label htmlFor="bulk-file" className="mt-3 block text-sm">Choose a .csv file (optional)</Label>
+      <input id="bulk-file" type="file" accept=".csv,text/csv" className="mt-1 block w-full text-sm"
+        onChange={async e => { const file = e.target.files?.[0]; if (file) { setCsv(await file.text()); setResult(null); setFailure(null); } e.target.value = ""; }} />
+      <Label htmlFor="bulk-csv" className="mt-3 block text-sm">CSV text</Label>
+      <Textarea id="bulk-csv" rows={8} className="mt-1 font-mono text-xs" value={csv} data-testid="textarea-bulk-csv"
+        placeholder={"university,faculty,department,source_url\nUniversity of Lagos,Faculty of Law,,https://unilag.edu.ng/..."}
+        onChange={e => { setCsv(e.target.value); setFailure(null); }} />
+      {failure && <p role="alert" className="mt-2 text-sm text-destructive">{failure}</p>}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button variant="outline" disabled={!csv.trim() || busy !== null} onClick={() => run(false)} data-testid="button-bulk-check">
+          {busy === "check" ? "Checking…" : "Check upload"}
+        </Button>
+        <Button disabled={!canImport || busy !== null} onClick={() => run(true)} data-testid="button-bulk-import">
+          {busy === "import" ? "Importing…" : result && canImport ? `Import ${result.newFaculties} faculties and ${result.newDepartments} departments` : "Import"}
+        </Button>
+      </div>
+      {result && (
+        <div className="mt-4 space-y-3 text-sm" aria-live="polite" data-testid="bulk-result">
+          <p className={result.errors.length ? "font-medium text-destructive" : "font-medium"}>{result.message}</p>
+          <p className="text-muted-foreground">
+            {result.rowsRead} rows read · {result.newFaculties} new faculties · {result.newDepartments} new departments · {result.alreadyExist} already in the directory
+            {result.skippedInactive ? ` · ${result.skippedInactive} inactive (left unchanged)` : ""}
+          </p>
+          {result.partialMatches.length > 0 && (
+            <div>
+              <p className="font-medium">University names matched by partial name. Check these are correct:</p>
+              <ul className="list-disc pl-5 text-muted-foreground">
+                {result.partialMatches.slice(0, 20).map(m => <li key={m.input}>{m.input} → {m.matched}</li>)}
+              </ul>
+            </div>
+          )}
+          {result.errors.length > 0 && (
+            <div>
+              <p className="font-medium">Problems to fix:</p>
+              <ul className="list-disc pl-5 text-destructive">
+                {result.errors.slice(0, 30).map(e => <li key={`${e.line}-${e.message}`}>Line {e.line}: {e.message}</li>)}
+              </ul>
+              {result.errors.length > 30 && <p className="text-muted-foreground">…and {result.errors.length - 30} more.</p>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { administrator } from "../lib/auth";
 import { HttpError } from "../lib/errors";
 import { safeLink, academicEntry } from "../lib/validation";
 import { importOfficialUniversities } from "../lib/official-directory";
+import { bulkImportDirectory } from "../lib/directory-bulk";
+import { z } from "zod";
 import { setSocialActor, notify } from "../lib/social";
 
 const router: IRouter = Router();
@@ -13,6 +15,13 @@ router.post("/admin/directory/import-nigeria", async (req, res): Promise<void> =
   const actor = await administrator(req);
   if (actor.role !== "owner") throw new HttpError(403, "Only the owner can import official reference data.");
   res.json(await importOfficialUniversities(actor.id));
+});
+const BulkDirectoryBody = z.object({ csv: z.string().min(1).max(300_000), commit: z.boolean() }).strict();
+router.post("/admin/directory/bulk", async (req, res): Promise<void> => {
+  const actor = await administrator(req);
+  if (actor.role !== "owner") throw new HttpError(403, "Only the owner can bulk-import directory data.");
+  const body = BulkDirectoryBody.parse(req.body);
+  res.json(await bulkImportDirectory(actor.id, body.csv, body.commit));
 });
 router.get("/admin/overview", async (req, res): Promise<void> => {
   await administrator(req);
