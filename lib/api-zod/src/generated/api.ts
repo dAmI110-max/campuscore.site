@@ -320,7 +320,7 @@ export const ChooseCommerceAccountResponse = zod.object({
 
 
 export const StartCommerceCheckoutBody = zod.object({
-  "kind": zod.enum(['marketplace', 'premium']),
+  "kind": zod.enum(['marketplace', 'premium', 'site_premium', 'premium_bundle']),
   "listingId": zod.int().min(1).optional()
 })
 
@@ -345,7 +345,7 @@ export const VerifyCommerceCheckoutBody = zod.object({
 
 export const VerifyCommerceCheckoutResponse = zod.object({
   "orderId": zod.string(),
-  "kind": zod.enum(['marketplace', 'premium']),
+  "kind": zod.enum(['marketplace', 'premium', 'site_premium', 'premium_bundle']),
   "status": zod.enum(['pending', 'paid']),
   "amountMinor": zod.int(),
   "currency": zod.enum(['NGN']),

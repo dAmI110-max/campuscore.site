@@ -3,12 +3,16 @@ import { z } from "zod";
 import { account } from "../lib/auth";
 import {
   assertDailyQuota,
+  assertMonthlyTokenBudget,
   callCoreAi,
   hasActiveSitePremium,
   recordUsage,
   requireSitePremiumForCoreAi,
   CORE_AI_DAILY_MESSAGE_LIMIT,
+  CORE_AI_MONTHLY_TOKEN_LIMIT,
   SITE_PREMIUM_PRICE_MINOR,
+  PREMIUM_BUNDLE_PRICE_MINOR,
+  SELLER_PREMIUM_PRICE_MINOR,
 } from "../lib/core-ai";
 import { HttpError } from "../lib/errors";
 
@@ -31,25 +35,33 @@ const ChatBody = z.object({
 router.get("/core-ai/status", async (req, res) => {
   const user = await account(req);
   const active = await hasActiveSitePremium(user.id);
-  let used = 0;
+  let dailyUsed = 0;
+  let monthlyUsed = 0;
   try {
     const q = await assertDailyQuota(user.id);
-    used = q.used;
+    dailyUsed = q.used;
   } catch (e) {
-    if (e instanceof HttpError && e.status === 429) used = CORE_AI_DAILY_MESSAGE_LIMIT;
-    else if (!(e instanceof HttpError && e.status === 402)) {
-      /* ignore missing table until migration applied */
-    }
+    if (e instanceof HttpError && e.status === 429) dailyUsed = CORE_AI_DAILY_MESSAGE_LIMIT;
+  }
+  try {
+    const m = await assertMonthlyTokenBudget(user.id);
+    monthlyUsed = m.used;
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 429) monthlyUsed = CORE_AI_MONTHLY_TOKEN_LIMIT;
   }
   res.json({
     name: "Core AI",
     enabled: Boolean(process.env.XAI_API_KEY?.trim()),
     sitePremiumActive: active,
     sitePremiumPriceMinor: SITE_PREMIUM_PRICE_MINOR,
+    sellerPremiumPriceMinor: SELLER_PREMIUM_PRICE_MINOR,
+    bundlePriceMinor: PREMIUM_BUNDLE_PRICE_MINOR,
     dailyLimit: CORE_AI_DAILY_MESSAGE_LIMIT,
-    dailyUsed: used,
+    dailyUsed,
+    monthlyTokenLimit: CORE_AI_MONTHLY_TOKEN_LIMIT,
+    monthlyTokenUsed: monthlyUsed,
     unlockNote:
-      "Core AI is part of Campus Core Site Premium (₦3,000/month). Seller Premium (₦2,000) does not include Core AI.",
+      "Core AI is included with Site Premium (₦3,000) or the Seller + Site bundle (₦4,500). Seller Premium alone does not include Core AI.",
   });
 });
 
@@ -58,13 +70,14 @@ router.post("/core-ai/chat", async (req, res) => {
   if (user.suspended) throw new HttpError(403, "This account is suspended.");
   await requireSitePremiumForCoreAi(user.id);
   await assertDailyQuota(user.id);
+  await assertMonthlyTokenBudget(user.id);
 
   const body = ChatBody.parse(req.body);
   const result = await callCoreAi(body.message, body.history);
   try {
     await recordUsage(user.id, result.promptTokens, result.completionTokens);
   } catch {
-    // Usage table may not exist until migration 0008 is applied; still return the answer.
+    /* usage table may be missing until migrations applied */
   }
 
   res.json({
