@@ -11,7 +11,7 @@ import {
 } from "@workspace/api-zod";
 import { account, administrator } from "../lib/auth";
 import { addLagosCalendarMonth, commerceAccount, commerceLaunch, commerceUser, setCommerceRole, requirePremiumEligibility, PREMIUM_PRICE_MINOR, PAYMENT_UNAVAILABLE } from "../lib/commerce";
-import { SITE_PREMIUM_PRICE_MINOR, hasActiveSitePremium } from "../lib/core-ai";
+import { SITE_PREMIUM_PRICE_MINOR, PREMIUM_BUNDLE_PRICE_MINOR, hasActiveSitePremium } from "../lib/core-ai";
 import { staffTransaction } from "../lib/staff-access";
 import { HttpError } from "../lib/errors";
 import { z } from "zod";
@@ -55,6 +55,57 @@ router.put("/admin/commerce/launch", async (req, res): Promise<void> => {
   res.json(SetCommerceLaunchResponse.parse(await commerceLaunch()));
 });
 
+
+router.get("/commerce/plans", async (req, res): Promise<void> => {
+  const user = await account(req);
+  const launch = await commerceLaunch();
+  const acc = await commerceAccount(user);
+  const siteActive = await hasActiveSitePremium(user.id);
+  const runtime = getPaystackRuntime();
+  const checkoutEnabled = Boolean(runtime.config);
+  const eligible = Boolean(launch.premiumEligibleAt && new Date() >= new Date(launch.premiumEligibleAt));
+  res.json({
+    currency: "NGN",
+    eligible,
+    eligibleAt: launch.premiumEligibleAt,
+    checkoutEnabled,
+    checkoutMode: runtime.config?.mode ?? "disabled",
+    plans: [
+      {
+        id: "premium",
+        name: "Seller Premium",
+        priceMinor: PREMIUM_PRICE_MINOR,
+        description: "Higher listing limits, more images, boosts. Does not include Core AI.",
+        includesCoreAi: false,
+        active: acc.premium?.status === "active",
+        until: acc.premium?.premiumUntil ?? null,
+        available: user.commerceRole === "seller",
+      },
+      {
+        id: "site_premium",
+        name: "Site Premium",
+        priceMinor: SITE_PREMIUM_PRICE_MINOR,
+        description: "Core AI study assistant and student Site Premium benefits.",
+        includesCoreAi: true,
+        active: siteActive,
+        until: null,
+        available: true,
+      },
+      {
+        id: "premium_bundle",
+        name: "Seller + Site bundle",
+        priceMinor: PREMIUM_BUNDLE_PRICE_MINOR,
+        compareAtMinor: PREMIUM_PRICE_MINOR + SITE_PREMIUM_PRICE_MINOR,
+        description: "Both products for ₦4,500 (save ₦500). Core AI + seller tools.",
+        includesCoreAi: true,
+        active: siteActive && acc.premium?.status === "active",
+        until: null,
+        available: user.commerceRole === "seller",
+      },
+    ],
+  });
+});
+
 router.post("/commerce/checkout", async (req, res): Promise<void> => {
   const user = await account(req, true);
   const input = StartCommerceCheckoutBody.strict().parse(req.body);
@@ -88,7 +139,10 @@ router.post("/commerce/checkout", async (req, res): Promise<void> => {
   const orderId = randomUUID();
   const provider = providerForMode(runtime.config.mode);
   const order = await db.transaction(async tx => {
-    let amountMinor = input.kind === "site_premium" ? SITE_PREMIUM_PRICE_MINOR : PREMIUM_PRICE_MINOR;
+    let amountMinor =
+      input.kind === "site_premium" ? SITE_PREMIUM_PRICE_MINOR
+      : input.kind === "premium_bundle" ? PREMIUM_BUNDLE_PRICE_MINOR
+      : PREMIUM_PRICE_MINOR;
     let sellerId: string | null = null;
     let listingId: number | null = null;
 
