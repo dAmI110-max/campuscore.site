@@ -12,4 +12,5 @@ export type CommerceCheckoutInputKind = typeof CommerceCheckoutInputKind[keyof t
 export const CommerceCheckoutInputKind = {
   marketplace: 'marketplace',
   premium: 'premium',
+  site_premium: 'site_premium',
 } as const;
