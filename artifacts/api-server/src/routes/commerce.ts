@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-zod";
 import { account, administrator } from "../lib/auth";
 import { addLagosCalendarMonth, commerceAccount, commerceLaunch, commerceUser, setCommerceRole, requirePremiumEligibility, PREMIUM_PRICE_MINOR, PAYMENT_UNAVAILABLE } from "../lib/commerce";
+import { SITE_PREMIUM_PRICE_MINOR, hasActiveSitePremium } from "../lib/core-ai";
 import { staffTransaction } from "../lib/staff-access";
 import { HttpError } from "../lib/errors";
 import { z } from "zod";
@@ -87,7 +88,7 @@ router.post("/commerce/checkout", async (req, res): Promise<void> => {
   const orderId = randomUUID();
   const provider = providerForMode(runtime.config.mode);
   const order = await db.transaction(async tx => {
-    let amountMinor = PREMIUM_PRICE_MINOR;
+    let amountMinor = input.kind === "site_premium" ? SITE_PREMIUM_PRICE_MINOR : PREMIUM_PRICE_MINOR;
     let sellerId: string | null = null;
     let listingId: number | null = null;
 
