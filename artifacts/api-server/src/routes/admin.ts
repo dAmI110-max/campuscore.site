@@ -26,8 +26,8 @@ router.post("/admin/directory/bulk", async (req, res): Promise<void> => {
 router.get("/admin/overview", async (req, res): Promise<void> => {
   await administrator(req);
   const [reports, requests, users, audit, directory] = await Promise.all([
-    db.select().from(reportsTable).orderBy(sql`case when ${reportsTable.status} = 'pending' then 0 else 1 end`, desc(reportsTable.createdAt)).limit(100),
-    db.select().from(r).orderBy(sql`case when ${r.status} = 'pending' then 0 else 1 end`, desc(r.createdAt)).limit(100),
+    db.select().from(reportsTable).where(eq(reportsTable.status, "pending")).orderBy(desc(reportsTable.createdAt)).limit(100),
+    db.select().from(r).where(eq(r.status, "pending")).orderBy(desc(r.createdAt)).limit(100),
     db.select().from(p).orderBy(desc(p.createdAt)).limit(100),
     db.select().from(auditTable).orderBy(desc(auditTable.createdAt)).limit(100),
     db.select().from(d).orderBy(d.name).limit(2000),
@@ -81,7 +81,7 @@ router.post("/admin/actions", async (req, res): Promise<void> => {
       if (!/^[1-9]\d*$/.test(body.targetId)) throw new HttpError(400, "Invalid target identifier.");
       const id = Number(body.targetId);
       if (body.action === "resolve-report") changed = await tx.update(reportsTable).set({ status: "resolved" }).where(eq(reportsTable.id, id)).returning();
-      if (body.action === "dismiss-request") changed = await tx.update(r).set({ status: "reviewed" }).where(eq(r.id, id)).returning();
+      if (body.action === "dismiss-request") changed = await tx.update(r).set({ status: "reviewed" }).where(and(eq(r.id, id), eq(r.status, "pending"))).returning();
       if (body.action === "hide-listing") changed = await tx.update(l).set({ hidden: true, updatedAt: new Date() }).where(and(eq(l.id, id), eq(l.hidden, false))).returning();
       if (body.action === "verify-listing") changed = await tx.update(l).set({ verified: true, updatedAt: new Date() }).where(and(eq(l.id, id), eq(l.verified, false))).returning();
     }

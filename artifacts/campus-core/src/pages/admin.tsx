@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { DirectorySelect } from "@/components/directory-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, ErrorState, PageHeader, PageSkeleton } from "@/components/states";
@@ -382,11 +383,18 @@ function DirectoryDialog({ entry, entries, onClose }: { entry: (Partial<Director
         <div className="space-y-3">
           <div><Label>Name</Label><Input value={name} maxLength={200} onChange={(e) => setName(e.target.value)} data-testid="input-directory-name" /></div>
           {parentKind && (
-            <div><Label className="capitalize">Parent {parentKind}</Label>
-              <Select value={parentId} onValueChange={setParentId}>
-                <SelectTrigger data-testid="select-directory-parent"><SelectValue placeholder={`Choose ${parentKind}`} /></SelectTrigger>
-                <SelectContent>{parents.map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}</SelectContent>
-              </Select></div>
+            <div>
+              <Label className="capitalize">Parent {parentKind}</Label>
+              <DirectorySelect
+                entries={parents.map((p) => ({ id: p.id, name: p.name }))}
+                value={parentId ? Number(parentId) : null}
+                onChange={(id) => setParentId(id ? String(id) : "")}
+                placeholder={`Search and choose ${parentKind}`}
+                label={parentKind}
+                testId="select-directory-parent"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">Type to search — the list scrolls when there are many entries.</p>
+            </div>
           )}
           <div><Label>Official source URL</Label><Input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://" data-testid="input-directory-source" /></div>
           <div className="flex items-center justify-between rounded-lg bg-muted/60 p-3"><Label>Active, shown to students</Label><Switch checked={active} onCheckedChange={setActive} data-testid="switch-directory-active" /></div>
