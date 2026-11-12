@@ -13,4 +13,5 @@ export const CommerceCheckoutInputKind = {
   marketplace: 'marketplace',
   premium: 'premium',
   site_premium: 'site_premium',
+  premium_bundle: 'premium_bundle',
 } as const;
