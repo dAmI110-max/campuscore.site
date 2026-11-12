@@ -115,7 +115,7 @@ components:
       additionalProperties: false
       required: [kind]
       properties:
-        kind: {type: string, enum: [marketplace, premium, site_premium]}
+        kind: {type: string, enum: [marketplace, premium, site_premium, premium_bundle]}
         listingId: {type: integer, minimum: 1}
     CommerceUnavailable:
       type: object
@@ -141,7 +141,7 @@ components:
       required: [orderId, kind, status, amountMinor, currency, mode, verifiedAt, premiumUntil]
       properties:
         orderId: {type: string}
-        kind: {type: string, enum: [marketplace, premium, site_premium]}
+        kind: {type: string, enum: [marketplace, premium, site_premium, premium_bundle]}
         status: {type: string, enum: [pending, paid]}
         amountMinor: {type: integer}
         currency: {type: string, enum: [NGN]}
