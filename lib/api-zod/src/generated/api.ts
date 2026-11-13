@@ -941,6 +941,7 @@ export const GetProfileResponse = zod.object({
   "facultyId": zod.int().nullable(),
   "departmentId": zod.int().nullable(),
   "bio": zod.string(),
+  "contactPhone": zod.string(),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
   "role": zod.enum(['student', 'admin', 'owner']),
@@ -968,6 +969,7 @@ export const SaveProfileBody = zod.object({
   "facultyId": zod.int().nullable(),
   "departmentId": zod.int().nullable(),
   "bio": zod.string().max(saveProfileBodyBioMax),
+  "contactPhone": zod.string().max(30).optional().default(""),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable()
 })
@@ -981,6 +983,7 @@ export const SaveProfileResponse = zod.object({
   "facultyId": zod.int().nullable(),
   "departmentId": zod.int().nullable(),
   "bio": zod.string(),
+  "contactPhone": zod.string(),
   "showAcademics": zod.boolean(),
   "avatarPath": zod.string().nullable(),
   "role": zod.enum(['student', 'admin', 'owner']),
@@ -998,6 +1001,7 @@ export const GetPublicProfileResponse = zod.object({
   "displayName": zod.string(),
   "username": zod.string(),
   "bio": zod.string(),
+  "contactPhone": zod.string(),
   "avatarPath": zod.string().nullable(),
   "universityName": zod.string().nullable()
 })

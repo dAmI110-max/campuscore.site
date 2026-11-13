@@ -36,6 +36,9 @@ export function SignUpPage() {
   return (
     <Frame title="Your campus, organised." text="One account for the marketplace, rooms, services, opportunities, study material, communities and events.">
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} fallbackRedirectUrl={`${basePath}/onboarding`} />
+      <p className="max-w-[440px] text-center text-xs text-muted-foreground">
+        Use your email to join. A WhatsApp or phone number is optional later on your profile so buyers can reach you.
+      </p>
     </Frame>
   );
 }

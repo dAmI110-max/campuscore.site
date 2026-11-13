@@ -104,6 +104,15 @@ const clerkAppearance = {
     otpCodeFieldInput: "border border-input text-foreground",
     formFieldRow: "gap-3",
     main: "gap-5",
+    // Auth is email-based; phone is collected later on profile for WhatsApp contact only.
+    formFieldRow__phoneNumber: "hidden",
+    formFieldLabelRow__phoneNumber: "hidden",
+    formFieldInput__phoneNumber: "hidden",
+    phoneInputBox: "hidden",
+    identityPreview__phoneNumber: "hidden",
+    formFieldAction__phoneNumber: "hidden",
+    alternativeMethodsBlockButton__phone_code: "hidden",
+    button__phone_code: "hidden",
   },
 };
 
