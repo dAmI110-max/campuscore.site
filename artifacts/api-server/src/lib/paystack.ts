@@ -88,7 +88,7 @@ export class PaystackClient {
     amountMinor: number;
     reference: string;
     orderId: string;
-    kind: "marketplace" | "premium";
+    kind: "marketplace" | "premium" | "site_premium" | "premium_bundle";
   }): Promise<{ reference: string; authorizationUrl: string }> {
     if (!Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0
       || !/^[A-Za-z0-9.=-]{1,100}$/.test(input.reference)) {
