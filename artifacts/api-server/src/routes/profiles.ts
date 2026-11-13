@@ -28,6 +28,7 @@ router.put("/profile", async (req, res): Promise<void> => {
   const issue = usernameError(username);
   if (issue) throw new HttpError(400, issue);
   const displayName = body.displayName.trim();
+  const contactPhone = (body.contactPhone ?? "").trim().slice(0, 30);
   if (displayName.length < 2) throw new HttpError(400, "Enter your display name.");
   await academicEntry(body.countryId, "country");
   await academicEntry(body.universityId, "university", body.countryId);
@@ -38,7 +39,7 @@ router.put("/profile", async (req, res): Promise<void> => {
   }
   if (body.avatarPath) await ownedImages([body.avatarPath], user.id);
   const [saved] = await db.update(profilesTable).set({
-    ...body, displayName, username, updatedAt: new Date(),
+    ...body, displayName, username, contactPhone, updatedAt: new Date(),
   }).where(eq(profilesTable.id, user.id)).returning();
   res.json(SaveProfileResponse.parse({ ...saved, complete: true }));
 });
@@ -52,7 +53,7 @@ router.get("/profiles/:username", async (req, res): Promise<void> => {
     universityName = entry?.name ?? null;
   }
   res.json(GetPublicProfileResponse.parse({
-    displayName: user.displayName, username: user.username, bio: user.bio, avatarPath: user.avatarPath, universityName,
+    displayName: user.displayName, username: user.username, bio: user.bio, contactPhone: user.contactPhone || "", avatarPath: user.avatarPath, universityName,
   }));
 });
 export default router;
