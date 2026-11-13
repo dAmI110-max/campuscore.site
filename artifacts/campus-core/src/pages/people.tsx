@@ -33,6 +33,14 @@ export default function People() {
         <p className="text-muted-foreground" data-testid="text-username">@{data.username}</p>
         {data.universityName && <p className="mt-3 flex items-center gap-2 text-sm"><School className="h-4 w-4 text-primary" />{data.universityName}</p>}
         <p className="mt-5 whitespace-pre-wrap">{data.bio || <span className="text-muted-foreground">No bio yet.</span>}</p>
+        {data.contactPhone?.trim() ? (
+          <p className="mt-3 text-sm">
+            <span className="text-muted-foreground">WhatsApp / phone: </span>
+            <a className="font-medium text-primary hover:underline" href={`https://wa.me/${data.contactPhone.replace(/\D/g, "").replace(/^0/, "234")}`} target="_blank" rel="noreferrer">
+              {data.contactPhone}
+            </a>
+          </p>
+        ) : null}
         {!isSelf && (
           <div className="mt-6 flex flex-wrap gap-2 border-t pt-5">
             <MessageButton username={data.username} />
