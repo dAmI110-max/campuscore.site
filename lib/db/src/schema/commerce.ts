@@ -34,13 +34,13 @@ export const commerceOrdersTable = pgTable("commerce_orders", {
   uniqueIndex("commerce_provider_reference").on(t.provider, t.providerReference),
   index("commerce_buyer_orders").on(t.buyerId, t.createdAt),
   index("commerce_seller_orders").on(t.sellerId, t.createdAt),
-  check("commerce_order_kind", sql`${t.kind} in ('marketplace','premium')`),
+  check("commerce_order_kind", sql`${t.kind} in ('marketplace','premium','site_premium','premium_bundle')`),
   check("commerce_order_status", sql`${t.status} in ('pending','paid','failed','cancelled','refunded','partially_refunded','disputed')`),
   check("commerce_order_currency", sql`${t.currency} = 'NGN'`),
   check("commerce_order_amount", sql`${t.amountMinor} > 0 and ${t.amountMinor} <= 9007199254740991 and ${t.refundedMinor} >= 0 and ${t.refundedMinor} <= ${t.amountMinor}`),
   check("commerce_known_fees", sql`(${t.platformFeeMinor} is null or ${t.platformFeeMinor} between 0 and ${t.amountMinor}) and (${t.processingFeeMinor} is null or ${t.processingFeeMinor} between 0 and ${t.amountMinor})`),
   check("commerce_verified_status", sql`${t.status} not in ('paid','refunded','partially_refunded','disputed') or (${t.verifiedAt} is not null and ${t.providerReference} is not null and ${t.provider} is not null)`),
-  check("commerce_premium_price", sql`${t.kind} <> 'premium' or ${t.amountMinor} = 200000`),
+  check("commerce_premium_prices", sql`(${t.kind} = 'premium' and ${t.amountMinor} = 200000) or (${t.kind} = 'site_premium' and ${t.amountMinor} = 300000) or (${t.kind} = 'premium_bundle' and ${t.amountMinor} = 450000) or (${t.kind} = 'marketplace')`),
   check("commerce_marketplace_parties", sql`${t.kind} <> 'marketplace' or (${t.sellerId} is not null and ${t.listingId} is not null and ${t.sellerId} <> ${t.buyerId})`),
 ]).enableRLS();
 
