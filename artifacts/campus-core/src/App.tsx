@@ -37,16 +37,15 @@ import { KINDS } from "@/lib/kinds";
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } } });
 
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+const envClerkPubKey = (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim() || "";
+// Prefer the explicit Vite key. Host-based resolution is optional and must not
+// blank the whole app when the domain is not mapped as a Clerk satellite.
+const clerkPubKey =
+  publishableKeyFromHost(window.location.hostname, envClerkPubKey) || envClerkPubKey;
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-// A direct Clerk production domain and a managed proxy are different setups.
-// Only use a proxy when configured; a production Vite build is not proof that
-// the current Clerk instance has a proxy domain.
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+// Empty string is not a valid proxy URL and can prevent Clerk from loading.
+const clerkProxyUrl = (import.meta.env.VITE_CLERK_PROXY_URL as string | undefined)?.trim() || undefined;
 
 function stripBase(path: string): string {
   return basePath && path.startsWith(basePath)
