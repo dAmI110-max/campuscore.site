@@ -446,11 +446,12 @@ components:
         facultyId: { type: [integer, "null"] }
         departmentId: { type: [integer, "null"] }
         bio: { type: string, maxLength: 500 }
+        contactPhone: { type: string, maxLength: 30, default: "" }
         showAcademics: { type: boolean }
         avatarPath: { type: [string, "null"] }
     Profile:
       type: object
-      required: [id, displayName, username, countryId, universityId, facultyId, departmentId, bio, showAcademics, avatarPath, role, commerceRole, suspended, complete]
+      required: [id, displayName, username, countryId, universityId, facultyId, departmentId, bio, contactPhone, showAcademics, avatarPath, role, commerceRole, suspended, complete]
       properties:
         id: { type: string }
         displayName: { type: string }
@@ -460,6 +461,7 @@ components:
         facultyId: { type: [integer, "null"] }
         departmentId: { type: [integer, "null"] }
         bio: { type: string }
+        contactPhone: { type: string }
         showAcademics: { type: boolean }
         avatarPath: { type: [string, "null"] }
         role: { type: string, enum: [student, admin, owner] }
@@ -468,11 +470,12 @@ components:
         complete: { type: boolean }
     PublicProfile:
       type: object
-      required: [displayName, username, bio, avatarPath, universityName]
+      required: [displayName, username, bio, contactPhone, avatarPath, universityName]
       properties:
         displayName: { type: string }
         username: { type: string }
         bio: { type: string }
+        contactPhone: { type: string }
         avatarPath: { type: [string, "null"] }
         universityName: { type: [string, "null"] }
     ListingInput:
