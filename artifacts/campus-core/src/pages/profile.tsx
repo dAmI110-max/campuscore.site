@@ -29,6 +29,8 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [bio,
   const [bio, setBio] = useState("");
   const [showAcademics, setShowAcademics] = useState(true);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
       setDisplayName(profile.displayName);
       setUsername(profile.username ?? "");
       setDebounced(profile.username ?? "");
+      setContactPhone(profile.contactPhone ?? "");
       setBio(profile.bio);
       setShowAcademics(profile.showAcademics);
       setAvatarPath(profile.avatarPath);
@@ -83,7 +86,7 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
     if (!inst.countryId || !inst.universityId) return setFormErr("Choose your country and university. If yours is missing, request it below the selector.");
     save.mutate({ data: {
       displayName: displayName.trim(), username, countryId: inst.countryId, universityId: inst.universityId,
-      facultyId: inst.facultyId, departmentId: inst.departmentId, bio: bio.trim(), showAcademics, avatarPath,
+      facultyId: inst.facultyId, departmentId: inst.departmentId, bio: bio.trim(), contactPhone: contactPhone.trim(), showAcademics, avatarPath,
     } }, {
       onSuccess: (p) => {
         qc.setQueryData(getGetProfileQueryKey(), p);
@@ -126,7 +129,13 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
               <p className={`mt-1 text-xs ${unameStatus.ok === false ? "text-destructive" : "text-muted-foreground"}`} data-testid="text-username-status">{unameStatus.text}</p>
             </div>
           </div>
-          <div><Label htmlFor="bio">Bio</Label><Textarea id="bio" className="mt-1.5" rows={3} maxLength={500} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Course, level, what you are into" data-testid="input-bio" />
+          
+        <div className="space-y-2">
+          <Label htmlFor="contact-phone">WhatsApp / contact phone (optional)</Label>
+          <Input id="contact-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="e.g. 0803 123 4567" maxLength={30} value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} data-testid="input-contact-phone" />
+          <p className="text-xs text-muted-foreground">Not used for login. Buyers can use this to reach you on WhatsApp about a listing.</p>
+        </div>
+<div><Label htmlFor="bio">Bio</Label><Textarea id="bio" className="mt-1.5" rows={3} maxLength={500} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Course, level, what you are into" data-testid="input-bio" />
             <p className="mt-1 text-right font-mono text-xs text-muted-foreground">{bio.length}/500</p></div>
         </section>
 
