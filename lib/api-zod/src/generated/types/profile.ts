@@ -22,6 +22,8 @@ export interface Profile {
   /** @nullable */
   departmentId: number | null;
   bio: string;
+  /** Optional WhatsApp/contact phone for marketplace reach-outs (not login). */
+  contactPhone: string;
   showAcademics: boolean;
   /** @nullable */
   avatarPath: string | null;
