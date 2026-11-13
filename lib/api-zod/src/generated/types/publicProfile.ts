@@ -11,7 +11,7 @@ export interface PublicProfile {
   username: string;
   bio: string;
   /** Optional WhatsApp/contact phone for marketplace reach-outs (not login). */
-  contactPhone?: string;
+  contactPhone: string;
   /** @nullable */
   avatarPath: string | null;
   /** @nullable */

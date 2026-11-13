@@ -126,6 +126,8 @@ export interface ProfileInput {
   departmentId: number | null;
   /** @maxLength 500 */
   bio: string;
+  /** @maxLength 30 */
+  contactPhone?: string;
   showAcademics: boolean;
   /** @nullable */
   avatarPath: string | null;
@@ -162,6 +164,7 @@ export interface Profile {
   /** @nullable */
   departmentId: number | null;
   bio: string;
+  contactPhone: string;
   showAcademics: boolean;
   /** @nullable */
   avatarPath: string | null;
@@ -175,6 +178,7 @@ export interface PublicProfile {
   displayName: string;
   username: string;
   bio: string;
+  contactPhone: string;
   /** @nullable */
   avatarPath: string | null;
   /** @nullable */
