@@ -30,7 +30,6 @@ export default function ProfilePage({ onboarding }: { onboarding?: boolean }) {
   const [username, setUsername] = useState("");
   const [debounced, setDebounced] = useState("");
   const [contactPhone, setContactPhone] = useState("");
-  const [bio,
   const [bio, setBio] = useState("");
   const [showAcademics, setShowAcademics] = useState(true);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
