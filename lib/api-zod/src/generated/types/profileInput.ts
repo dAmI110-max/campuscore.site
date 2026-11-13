@@ -25,6 +25,11 @@ export interface ProfileInput {
   departmentId: number | null;
   /** @maxLength 500 */
   bio: string;
+  /**
+     * Optional WhatsApp/contact phone for marketplace reach-outs (not login).
+     * @maxLength 30
+     */
+  contactPhone?: string;
   showAcademics: boolean;
   /** @nullable */
   avatarPath: string | null;
