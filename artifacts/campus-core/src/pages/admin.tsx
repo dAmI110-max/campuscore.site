@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, Plus, KeyRound, Pencil, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
@@ -130,9 +131,14 @@ type BulkResult = {
   committed: boolean; rowsRead: number; newFaculties: number; newDepartments: number; alreadyExist: number; skippedInactive: number;
   partialMatches: { input: string; matched: string }[]; errors: { line: number; message: string }[]; message: string;
 };
-async function postBulkDirectory(csv: string, commit: boolean): Promise<BulkResult> {
+async function postBulkDirectory(csv: string, commit: boolean, token: string | null): Promise<BulkResult> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch("/api/admin/directory/bulk", {
-    method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csv, commit }),
+    method: "POST",
+    credentials: "same-origin",
+    headers,
+    body: JSON.stringify({ csv, commit }),
   });
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error(data?.error ?? "The upload could not be processed. Please try again.");
@@ -140,6 +146,7 @@ async function postBulkDirectory(csv: string, commit: boolean): Promise<BulkResu
 }
 
 function BulkDirectoryImport() {
+  const { getToken } = useAuth();
   const [csv, setCsv] = useState("");
   const [checkedCsv, setCheckedCsv] = useState<string | null>(null);
   const [result, setResult] = useState<BulkResult | null>(null);
@@ -154,7 +161,7 @@ function BulkDirectoryImport() {
     setBusy(commit ? "import" : "check");
     setFailure(null);
     try {
-      const next = await postBulkDirectory(csv, commit);
+      const next = await postBulkDirectory(csv, commit, await getToken());
       setResult(next);
       setCheckedCsv(csv);
       if (next.committed) {
