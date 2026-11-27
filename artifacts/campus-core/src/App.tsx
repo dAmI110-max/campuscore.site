@@ -34,6 +34,7 @@ import Account from "@/pages/account";
 import CoreAiPage from "@/pages/core-ai";
 import { SignInPage, SignUpPage } from "@/pages/auth";
 import { KINDS } from "@/lib/kinds";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } } });
 
@@ -114,6 +115,24 @@ const clerkAppearance = {
     button__phone_code: "hidden",
   },
 };
+
+
+/** Attach Clerk session JWT to API fetches so /profile and other gated routes work when cookies are missing. */
+function AuthTokenBridge() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  useEffect(() => {
+    setAuthTokenGetter(async () => {
+      if (!isLoaded || !isSignedIn) return null;
+      try {
+        return (await getToken()) ?? null;
+      } catch {
+        return null;
+      }
+    });
+    return () => setAuthTokenGetter(null);
+  }, [getToken, isLoaded, isSignedIn]);
+  return null;
+}
 
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
@@ -205,6 +224,7 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <AuthTokenBridge />
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
           <IdentityScopedRouter />
