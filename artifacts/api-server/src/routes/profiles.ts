@@ -52,8 +52,15 @@ router.get("/profiles/:username", async (req, res): Promise<void> => {
     const [entry] = await db.select().from(directoryTable).where(eq(directoryTable.id, user.universityId));
     universityName = entry?.name ?? null;
   }
+  // Phone is only for signed-in students (marketplace reach-out), never public to anonymous visitors.
+  const signedIn = Boolean(identity(req));
   res.json(GetPublicProfileResponse.parse({
-    displayName: user.displayName, username: user.username, bio: user.bio, contactPhone: user.contactPhone || "", avatarPath: user.avatarPath, universityName,
+    displayName: user.displayName,
+    username: user.username,
+    bio: user.bio,
+    contactPhone: signedIn ? (user.contactPhone || "") : "",
+    avatarPath: user.avatarPath,
+    universityName,
   }));
 });
 export default router;
